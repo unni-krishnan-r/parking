@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-md mx-auto h-full flex flex-col justify-center px-6 py-8">
+
+    <div class="text-center mb-6">
+        <h1 class="text-3xl font-extrabold text-white mb-2">Create Account</h1>
+        <p class="text-muted text-sm">Join ParkEasy today.</p>
+    </div>
+
+    <form action="{{ url_for('register') }}" method="post" class="space-y-4">
+        <div>
+            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Username</label>
+            <input type="text" name="username" required
+                class="block w-full px-4 py-3 rounded-xl bg-surface border border-border text-white placeholder-gray-600 focus:outline-none focus:border-accent transition-colors"
+                placeholder="JohnDoe">
+        </div>
+
+        <div>
+            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Email Address</label>
+            <input type="email" name="email" required
+                class="block w-full px-4 py-3 rounded-xl bg-surface border border-border text-white placeholder-gray-600 focus:outline-none focus:border-accent transition-colors"
+                placeholder="you@example.com">
+        </div>
+
+        <div>
+            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Vehicle Number
+                (Optional)</label>
+            <input type="text" name="vehicle_number"
+                class="block w-full px-4 py-3 rounded-xl bg-surface border border-border text-white placeholder-gray-600 focus:outline-none focus:border-accent transition-colors"
+                placeholder="AB-123-CD">
+        </div>
+
+        <div>
+            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Password</label>
+            <input type="password" name="password" required
+                class="block w-full px-4 py-3 rounded-xl bg-surface border border-border text-white placeholder-gray-600 focus:outline-none focus:border-accent transition-colors"
+                placeholder="••••••••">
+        </div>
+
+        <button type="submit"
+            class="w-full bg-primary text-white font-bold py-4 rounded-xl hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-900/20 mt-2">
+            Create Account
+        </button>
+    </form>
+
+    <div class="mt-8 text-center mb-8">
+        <p class="text-sm text-gray-500">Already have an account? <a href="{{ url_for('login') }}"
+                class="text-accent font-semibold hover:underline">Log In</a></p>
+    </div>
+
+</div>
+{% endblock %}

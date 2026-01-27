@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-md mx-auto h-full flex flex-col justify-center px-6">
+
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-extrabold text-white mb-2">Welcome Back</h1>
+        <p class="text-muted text-sm">Sign in to continue parking.</p>
+    </div>
+
+    <form action="{{ url_for('login') }}" method="post" class="space-y-4">
+        <div>
+            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Email Address</label>
+            <input type="email" name="email" required
+                class="block w-full px-4 py-3 rounded-xl bg-surface border border-border text-white placeholder-gray-600 focus:outline-none focus:border-accent transition-colors"
+                placeholder="you@example.com">
+        </div>
+
+        <div>
+            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Password</label>
+            <input type="password" name="password" required
+                class="block w-full px-4 py-3 rounded-xl bg-surface border border-border text-white placeholder-gray-600 focus:outline-none focus:border-accent transition-colors"
+                placeholder="••••••••">
+        </div>
+
+        <button type="submit"
+            class="w-full bg-accent text-black font-bold py-4 rounded-xl hover:bg-emerald-400 transition-colors shadow-lg shadow-emerald-900/20 mt-2">
+            Sign In
+        </button>
+    </form>
+
+    <div class="mt-8 text-center">
+        <p class="text-sm text-gray-500">Don't have an account? <a href="{{ url_for('register') }}"
+                class="text-accent font-semibold hover:underline">Sign Up</a></p>
+    </div>
+
+</div>
+{% endblock %}

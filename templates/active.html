@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="h-full flex flex-col">
+
+    <!-- Header Map Section -->
+    <div class="relative h-2/5 w-full bg-gray-900 border-b border-border">
+        <!-- Map Container -->
+        <div id="map" class="absolute inset-0 z-0"></div>
+
+        <!-- Back Button Overlay -->
+        <a href="{{ url_for('dashboard') }}"
+            class="absolute top-6 left-6 z-10 w-10 h-10 bg-surface/90 border border-border rounded-full flex items-center justify-center text-white shadow-lg">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+    </div>
+
+    <!-- Details Section -->
+    <div class="flex-1 px-6 pt-6 pb-24 overflow-y-auto bg-background">
+        {% if booking %}
+
+        <!-- Status Header -->
+        <div class="flex justify-between items-start mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-white mb-1">Active Session</h1>
+                <p class="text-accent text-sm font-bold flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-accent animate-pulse"></span> Live Tracking
+                </p>
+            </div>
+            <div class="text-right">
+                <p class="text-gray-400 text-xs uppercase mb-1">DURATION</p>
+                <h2 id="timer" class="text-2xl font-mono font-bold text-white">00:00:00</h2>
+            </div>
+        </div>
+
+        <!-- Location Card -->
+        <div class="bg-surface border border-border rounded-2xl p-5 mb-4 shadow-lg">
+            <h3 class="text-xl font-bold text-white mb-1">{{ booking.zone.name }}</h3>
+            <p class="text-gray-400 text-sm mb-4"><i class="fas fa-map-pin mr-1"></i> {{ booking.zone.location }}</p>
+
+            <!-- Slot Details -->
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-gray-800/50 p-3 rounded-xl text-center border border-gray-700">
+                    <p class="text-gray-500 text-[10px] uppercase">SLOT</p>
+                    <p class="text-xl font-bold text-accent">A-12</p>
+                </div>
+                <div class="bg-gray-800/50 p-3 rounded-xl text-center border border-gray-700">
+                    <p class="text-gray-500 text-[10px] uppercase">RATE</p>
+                    <p class="text-xl font-bold text-white">₹{{ booking.zone.price_per_hour|int }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Google Maps Link (Backup) -->
+        <a href="https://www.google.com/maps/dir/?api=1&destination={{ booking.zone.lat }},{{ booking.zone.lon }}"
+            target="_blank"
+            class="w-full bg-blue-600/10 border border-blue-500/30 text-blue-400 font-bold py-3 rounded-xl flex items-center justify-center gap-2 mb-4 hover:bg-blue-600/20 transition-colors text-sm">
+            <i class="fas fa-external-link-alt"></i> Open in Google Maps
+        </a>
+
+        <!-- End Session Button -->
+        <a href="{{ url_for('end_session', booking_id=booking.id) }}"
+            class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-4 rounded-xl text-center shadow-lg transition-transform active:scale-95 block">
+            END SESSION
+        </a>
+
+        {% else %}
+        <!-- Empty State -->
+        <div class="flex flex-col items-center justify-center h-full text-center">
+            <div class="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mb-4 text-gray-600">
+                <i class="fas fa-parking text-2xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-2">No Active Parking</h3>
+            <a href="{{ url_for('dashboard') }}" class="bg-accent text-black px-6 py-3 rounded-full font-bold">Find a
+                Slot</a>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<!-- Leaflet CSS & JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<!-- Leaflet Routing Machine -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+<script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+
+<script>
+    // --- Timer Logic ---
+    {% if booking %}
+    const startTime = new Date("{{ booking.start_time.isoformat() }}").getTime();
+    setInterval(() => {
+        const now = new Date().getTime();
+        const diff = now - startTime;
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+        document.getElementById('timer').innerText =
+            `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }, 1000);
+
+    // --- Map Logic ---
+    const destLat = {{ booking.zone.lat }};
+    const destLon = {{ booking.zone.lon }};
+
+    var map = L.map('map', { zoomControl: false }).setView([destLat, destLon], 14);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+        subdomains: 'abcd',
+        maxZoom: 20
+    }).addTo(map);
+
+    // Parking Icon
+    var parkingIcon = L.divIcon({
+        className: 'custom-div-icon',
+        html: "<div style='background-color:#10B981; width: 24px; height: 24px; border-radius: 50%; border: 2px solid #000; box-shadow: 0 0 10px #10B981;'></div>",
+        iconSize: [24, 24]
+    });
+    L.marker([destLat, destLon], { icon: parkingIcon }).addTo(map);
+
+    // Auto-Route User
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(pos => {
+            const userLat = pos.coords.latitude;
+            const userLon = pos.coords.longitude;
+
+            L.Routing.control({
+                waypoints: [
+                    L.latLng(userLat, userLon),
+                    L.latLng(destLat, destLon)
+                ],
+                routeWhileDragging: false,
+                lineOptions: {
+                    styles: [{ color: '#3B82F6', opacity: 0.8, weight: 6 }]
+                },
+                createMarker: function () { return null; },
+                addWaypoints: false,
+                draggableWaypoints: false,
+                fitSelectedRoutes: true,
+                show: false
+            }).addTo(map);
+        });
+    }
+    {% endif %}
+</script>
+{% endblock %}

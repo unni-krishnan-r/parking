@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-md mx-auto min-h-full px-5 pt-8">
+
+    <!-- Profile Header -->
+    <div class="flex items-center gap-4 mb-8">
+        <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-accent to-blue-500 p-0.5">
+            <div
+                class="w-full h-full rounded-full bg-surface border-4 border-black flex items-center justify-center overflow-hidden">
+                <i class="fas fa-user text-2xl text-gray-400"></i>
+            </div>
+        </div>
+        <div>
+            <h1 class="text-xl font-bold text-white">{{ user.username }}</h1>
+            <p class="text-sm text-muted">{{ user.email }}</p>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-2 gap-3 mb-8">
+        <div class="bg-surface border border-border p-4 rounded-2xl">
+            <div class="text-2xl font-bold text-white mb-1">0</div>
+            <div class="text-xs text-muted">Parkings this month</div>
+        </div>
+        <div class="bg-surface border border-border p-4 rounded-2xl">
+            <div class="text-2xl font-bold text-accent">₹0</div>
+            <div class="text-xs text-muted">Total Spent</div>
+        </div>
+    </div>
+
+    <!-- Menu -->
+    <div class="space-y-2">
+        <h2 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 px-1">Settings</h2>
+
+        <button
+            class="w-full bg-surface border border-border p-4 rounded-xl flex justify-between items-center text-gray-300 hover:bg-gray-800 transition-colors">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400">
+                    <i class="fas fa-car"></i>
+                </div>
+                <span class="text-sm font-medium">My Vehicles</span>
+            </div>
+            <i class="fas fa-chevron-right text-xs text-gray-600"></i>
+        </button>
+
+        <button
+            class="w-full bg-surface border border-border p-4 rounded-xl flex justify-between items-center text-gray-300 hover:bg-gray-800 transition-colors">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400">
+                    <i class="fas fa-credit-card"></i>
+                </div>
+                <span class="text-sm font-medium">Payment Methods</span>
+            </div>
+            <i class="fas fa-chevron-right text-xs text-gray-600"></i>
+        </button>
+
+        <button
+            class="w-full bg-surface border border-border p-4 rounded-xl flex justify-between items-center text-gray-300 hover:bg-gray-800 transition-colors">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center text-accent">
+                    <i class="fas fa-bell"></i>
+                </div>
+                <span class="text-sm font-medium">Notifications</span>
+            </div>
+            <div class="w-10 h-6 bg-accent rounded-full relative">
+                <div class="absolute right-1 top-1 w-4 h-4 bg-white rounded-full"></div>
+            </div>
+        </button>
+    </div>
+
+    <div class="mt-8 text-center">
+        <a href="{{ url_for('logout') }}" class="text-red-500 text-sm font-medium hover:text-red-400">Log Out</a>
+        <p class="text-[10px] text-gray-700 mt-4">v2.0.1 (Build 492)</p>
+    </div>
+
+</div>
+{% endblock %}

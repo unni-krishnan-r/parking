@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="min-h-full px-6 pt-10 flex flex-col justify-between pb-10">
+
+    <div>
+        <!-- Success Checkmark -->
+        <div class="flex justify-center mb-8">
+            <div
+                class="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(34,197,94,0.4)] animate-bounce-slow">
+                <i class="fas fa-check text-4xl text-black"></i>
+            </div>
+        </div>
+
+        <h1 class="text-3xl font-bold text-white text-center mb-2">Session Ended</h1>
+        <p class="text-gray-400 text-center mb-10">Hope you had a great experience!</p>
+
+        <!-- Bill Details -->
+        <div class="bg-surface border border-border rounded-3xl p-6 mb-6">
+            <h3 class="text-gray-400 text-xs uppercase tracking-widest mb-4 border-b border-gray-800 pb-2">BILLING
+                DETAILS</h3>
+
+            <div class="flex justify-between items-center mb-4">
+                <span class="text-gray-300">Parked at</span>
+                <span class="text-white font-bold text-right">{{ booking.zone.name }}</span>
+            </div>
+            <div class="flex justify-between items-center mb-4">
+                <span class="text-gray-300">Total Duration</span>
+                <span class="text-white font-bold">
+                    {% set duration = (booking.end_time - booking.start_time).total_seconds() / 60 %}
+                    {{ duration|int }} mins
+                </span>
+            </div>
+            <div class="flex justify-between items-center text-lg">
+                <span class="text-gray-300">Total Amount</span>
+                <span class="text-accent font-bold text-2xl">₹{{ booking.total_cost }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pay Button -->
+    <button id="pay-btn" onclick="processPayment()"
+        class="w-full bg-white text-black font-bold py-4 rounded-xl text-lg shadow-lg flex items-center justify-center gap-2">
+        <i class="fas fa-lock"></i> Pay Securely
+    </button>
+
+    <script>
+        function processPayment() {
+            const btn = document.getElementById('pay-btn');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            btn.classList.add('opacity-75', 'cursor-not-allowed');
+
+            // Simulate Payment Delay
+            setTimeout(() => {
+                window.location.href = "{{ url_for('history') }}";
+            }, 2000); // 2 seconds
+        }
+    </script>
+</div>
+{% endblock %}

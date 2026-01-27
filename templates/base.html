@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ParkEasy - Smart UI</title>
+
+    <!-- Local CSS Fallback -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Tailwind CSS (Full Build) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        surface: '#1A1D21',
+                        border: '#2D3139',
+                        accent: '#F59E0B',
+                        primary: '#8B5CF6'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="fixed top-0 left-0 w-full z-50 p-4">
+        {% for category, message in messages %}
+        <div
+            class="bg-surface border border-red-500 p-4 rounded-xl shadow-lg mb-2 text-white flex items-center justify-center">
+            <span class="mr-2">⚠️</span> {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto" style="padding-bottom: 5rem;">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!-- Sticky Bottom Navigation -->
+    <nav class="fixed bottom-0 w-full glass-nav z-50">
+        <div class="flex justify-between items-center h-16 max-w-md mx-auto px-4">
+
+            <a href="{{ url_for('active') }}" class="nav-link {{ 'active' if page == 'active' else '' }}">
+                <i class="fas fa-bolt text-lg"></i>
+                <div class="dot"></div>
+            </a>
+
+            <a href="{{ url_for('explore') }}" class="nav-link {{ 'active' if page == 'explore' else '' }}">
+                <i class="fas fa-compass text-lg"></i>
+                <div class="dot"></div>
+            </a>
+
+            <!-- Floating Dashboard/Home Button (Center) -->
+            <div class="relative" style="top: -1.5rem;">
+                <a href="{{ url_for('dashboard') }}"
+                    class="flex items-center justify-center w-14 h-14 rounded-full bg-primary text-white shadow-lg"
+                    style="box-shadow: 0 0 15px rgba(139, 92, 246, 0.4);">
+                    <i class="fas fa-home text-xl"></i>
+                </a>
+            </div>
+
+            <a href="{{ url_for('history') }}" class="nav-link {{ 'active' if page == 'history' else '' }}">
+                <i class="fas fa-receipt text-lg"></i>
+                <div class="dot"></div>
+            </a>
+
+            <a href="{{ url_for('profile') }}" class="nav-link {{ 'active' if page == 'profile' else '' }}">
+                <i class="fas fa-user text-lg"></i>
+                <div class="dot"></div>
+            </a>
+
+        </div>
+    </nav>
+
+    <script>
+        // Auto-hide alerts
+        setTimeout(() => {
+            const alerts = document.querySelectorAll('.fixed.top-0');
+            alerts.forEach(el => el.style.display = 'none');
+        }, 4000);
+    </script>
+</body>
+
+</html>

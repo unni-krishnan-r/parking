@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-md mx-auto min-h-full px-5 pt-8">
+
+    <!-- Hero Header -->
+    <div class="mb-6">
+        <h1 class="text-3xl font-extrabold text-white leading-tight mb-1">
+            Smart Parking <br> <span class="text-muted font-medium text-2xl">Made Simple.</span>
+        </h1>
+    </div>
+
+    <!-- Search Bar -->
+    <form action="{{ url_for('dashboard') }}" method="get" class="mb-6 relative z-10">
+        <div
+            class="flex items-center w-full bg-surface border border-border rounded-full p-1.5 pl-4 pill-shadow focus-within:ring-2 focus-within:ring-primary focus-within:border-transparent transition-all">
+            <i class="fas fa-search text-gray-500 text-lg mr-3"></i>
+            <input type="text" name="q" value="{{ search_query }}"
+                class="flex-1 bg-transparent border-none text-white placeholder-gray-500 focus:outline-none h-12 text-base shadow-none ring-0 focus:ring-0 active:bg-transparent"
+                style="background-color: transparent !important;" placeholder="Search location...">
+            <button type="submit"
+                class="w-11 h-11 bg-gray-800 rounded-full flex items-center justify-center text-accent hover:bg-gray-700 transition-colors shadow-lg ml-2">
+                <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </form>
+
+    <!-- Quick Toggles -->
+    <div class="flex gap-3 mb-8">
+        <button onclick="findNearby()"
+            class="px-5 py-2 rounded-full bg-surface border border-border text-sm text-gray-300 font-medium flex items-center gap-2 hover:border-accent hover:text-white transition-colors">
+            <i class="fas fa-location-arrow text-accent text-xs"></i> Near Me
+        </button>
+        <a href="{{ url_for('active') }}"
+            class="px-5 py-2 rounded-full bg-surface border border-border text-sm text-gray-300 font-medium flex items-center gap-2 hover:border-primary hover:text-white transition-colors">
+            <i class="fas fa-clock text-primary text-xs"></i> Active Session
+        </a>
+    </div>
+
+    <script>
+        function findNearby() {
+            if (!navigator.geolocation) {
+                alert("Geolocation is not supported by your browser");
+                return;
+            }
+
+            // Show loading state
+            const btn = document.querySelector('button[onclick="findNearby()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin text-accent"></i> Locating...';
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    // Redirect to dashboard with lat/lon for sorting
+                    window.location.href = `/dashboard?lat=${lat}&lon=${lon}`;
+                },
+                (error) => {
+                    console.error(error);
+                    alert("Unable to retrieve your location. Make sure you allow location access.");
+                    btn.innerHTML = originalText;
+                }
+            );
+        }
+    </script>
+
+    <!-- Feature Grid -->
+
+    <!-- Vehicle Type Selector -->
+    <div class="flex gap-4 overflow-x-auto pb-4 mb-4 scrollbar-hide">
+        <button
+            class="flex flex-col items-center justify-center min-w-[5rem] h-20 bg-accent text-black rounded-2xl shadow-lg transition-transform hover:scale-105">
+            <i class="fas fa-car text-2xl mb-1"></i>
+            <span class="text-xs font-bold">Car</span>
+        </button>
+        <button
+            class="flex flex-col items-center justify-center min-w-[5rem] h-20 bg-surface border border-border text-gray-400 rounded-2xl hover:border-gray-500 transition-colors">
+            <i class="fas fa-motorcycle text-2xl mb-1"></i>
+            <span class="text-xs font-bold">Scooter</span>
+        </button>
+        <button
+            class="flex flex-col items-center justify-center min-w-[5rem] h-20 bg-surface border border-border text-gray-400 rounded-2xl hover:border-gray-500 transition-colors">
+            <i class="fas fa-bus text-2xl mb-1"></i>
+            <span class="text-xs font-bold">Bus</span>
+        </button>
+    </div>
+
+    <!-- List Header -->
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-bold text-white">Nearby Space</h2>
+        <a href="#" class="text-xs text-accent font-bold">SEE ALL</a>
+    </div>
+
+    <!-- Listings (New Layout) -->
+    <div class="space-y-4 pb-4">
+        {% for zone in zones %}
+        <div class="bg-surface rounded-2xl p-4 border border-border relative overflow-hidden flex gap-4">
+
+            <!-- Thumbnail (Placeholder) -->
+            <div class="w-24 h-24 bg-gray-800 rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-parking text-3xl text-gray-600"></i>
+            </div>
+
+            <div class="flex-1 flex flex-col justify-between">
+                <div>
+                    <h3 class="text-base font-bold text-white leading-tight mb-1">{{ zone.name }}</h3>
+                    <p class="text-xs text-gray-500 truncate">{{ zone.location }}</p>
+                </div>
+
+                <div class="flex items-center justify-between mt-2">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-white flex items-center">
+                            <i class="fas fa-star text-yellow-500 text-[10px] mr-1"></i> {{ zone.rating }}
+                        </span>
+                    </div>
+                    <span class="text-white font-bold text-sm">₹{{ zone.price_per_hour|int }}<span
+                            class="text-gray-500 text-xs font-normal">/hr</span></span>
+                </div>
+            </div>
+
+            <!-- CTA Overlay Link -->
+            <a href="{{ url_for('book_slot', zone_id=zone.id) }}" class="absolute inset-0 z-20"
+                aria-label="Park here"></a>
+        </div>
+        {% endfor %}
+
+        {% if not zones %}
+        <div class="text-center py-10 opacity-50">
+            <i class="fas fa-search text-3xl mb-3"></i>
+            <p>No zones found here.</p>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}
