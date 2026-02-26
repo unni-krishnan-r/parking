@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="relative h-full w-full bg-gray-900">
+<div class="relative w-full bg-gray-900" style="height: 75vh;">
     <!-- 1. Map Container -->
-    <div id="map" class="absolute inset-0 z-0" style="height: 100vh; width: 100vw;"></div>
+    <div id="map" class="absolute inset-0 z-0" style="height: 100%; width: 100%;"></div>
 </div>
 
 <!-- 2. Search & Filter Overlay (Fixed Top) -->
@@ -39,55 +39,56 @@
 
 <!-- 3. Preview Card (Fixed Bottom) -->
 <div id="preview-card"
-    class="fixed bottom-24 left-4 right-4 z-[100] transform translate-y-[150%] transition-transform duration-300 ease-out">
-    <div
-        class="bg-surface border border-border rounded-3xl p-5 shadow-2xl flex flex-col gap-4 relative w-full max-w-md mx-auto">
+    class="fixed bottom-6 left-4 right-4 z-[100] transform translate-y-[150%] transition-transform duration-300 ease-out max-w-2xl mx-auto">
+    <div class="bg-surface border border-border rounded-2xl p-6 shadow-2xl flex flex-col gap-5 relative w-full">
         <!-- Close Button -->
         <button onclick="closePreview()"
-            class="absolute -top-3 -right-3 w-8 h-8 bg-gray-800 rounded-full border border-gray-600 flex items-center justify-center text-white shadow-lg z-50">
-            <i class="fas fa-times text-xs"></i>
+            class="absolute -top-4 -right-4 w-10 h-10 bg-gray-800 rounded-full border border-gray-600 flex items-center justify-center text-white shadow-lg z-50 hover:bg-gray-700">
+            <i class="fas fa-times text-sm"></i>
         </button>
 
         <!-- Header Info -->
         <div>
-            <h3 id="card-name" class="font-bold text-white text-xl leading-tight mb-1">Loading...</h3>
-            <p id="card-location" class="text-gray-400 text-sm">Location details...</p>
+            <h3 id="card-name" class="font-bold text-white text-2xl leading-tight mb-2">Loading...</h3>
+            <p id="card-location" class="text-gray-300 text-base">Location details...</p>
+        </div>
+
+        <!-- Details Row (Rating, Distance, Slots) -->
+        <div class="grid grid-cols-3 gap-4 py-3 border-y border-gray-700">
+            <div class="flex flex-col items-center">
+                <div class="flex items-center gap-1 mb-1">
+                    <i class="fas fa-star text-yellow-400"></i>
+                    <span id="card-rating" class="text-white font-bold text-lg">4.5</span>
+                </div>
+                <span class="text-gray-500 text-xs">Rating</span>
+            </div>
+            <div class="flex flex-col items-center">
+                <span id="card-distance" class="text-white font-bold text-lg mb-1">0.5 km</span>
+                <span class="text-gray-500 text-xs">Distance</span>
+            </div>
+            <div class="flex flex-col items-center">
+                <span id="card-slots" class="text-accent font-bold text-lg mb-1">--</span>
+                <span class="text-gray-500 text-xs uppercase tracking-wider">Available</span>
+            </div>
         </div>
 
         <!-- Action Buttons -->
-        <div class="flex gap-3 mt-1">
+        <div class="flex gap-3">
             <!-- Navigate Button -->
             <button
-                class="flex-1 bg-gray-700 hover:bg-gray-600 text-blue-400 font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors">
+                class="flex-1 bg-gray-700 hover:bg-gray-600 text-blue-300 font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors">
                 <i class="fas fa-location-arrow"></i>
                 <span>Navigate</span>
             </button>
 
             <!-- Book Now Button -->
             <a id="card-btn" href="#"
-                class="flex-1 bg-lime-600 hover:bg-lime-500 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-lg shadow-lime-900/20">
+                class="flex-1 bg-lime-600 hover:bg-lime-500 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-lg shadow-lime-900/20">
                 <i class="fas fa-calendar-check"></i>
                 <span>Book Now</span>
             </a>
         </div>
     </div>
-    <span class="flex items-center"><i class="fas fa-star text-yellow-500 mr-1"></i> <span
-            id="card-rating">4.5</span></span>
-    <span id="card-distance">0.5 km</span>
-</div>
-</div>
-
-<div class="flex justify-between items-end">
-    <div>
-        <span class="text-xs text-gray-500 block uppercase tracking-wider">Available</span>
-        <span id="card-slots" class="text-accent font-bold text-lg">--</span>
-    </div>
-    <a id="card-btn" href="#"
-        class="bg-accent hover:bg-yellow-500 text-black font-bold px-6 py-2 rounded-xl text-sm shadow-lg transition-colors">
-        View Details
-    </a>
-</div>
-</div>
 </div>
 </div>
 
@@ -161,44 +162,59 @@
 
     var userMarker = null;
 
-    // Fetch & Plot Markers
-    fetch('/api/nearby-parking?lat=10.0271&lon=76.3082')
-        .then(response => response.json())
-        .then(data => {
-            data.zones.forEach(zone => {
-                const markerId = `marker-${zone.id}`;
+    // Function to fetch and display parking zones
+    function fetchAndDisplayZones(lat, lon) {
+        fetch(`/api/nearby-parking?lat=${lat}&lon=${lon}`)
+            .then(response => response.json())
+            .then(data => {
+                data.zones.forEach(zone => {
+                    const markerId = `marker-${zone.id}`;
 
-                var icon = L.divIcon({
-                    className: 'custom-div-icon',
-                    html: `<div id="${markerId}" class="marker-wrapper">
-                             <div class="price-badge">₹${zone.price}</div>
-                           </div>`,
-                    iconSize: [50, 50],
-                    iconAnchor: [25, 25]
-                });
+                    var icon = L.divIcon({
+                        className: 'custom-div-icon',
+                        html: `<div id="${markerId}" class="marker-wrapper">
+                                 <div class="price-badge">₹${zone.price}</div>
+                               </div>`,
+                        iconSize: [50, 50],
+                        iconAnchor: [25, 25]
+                    });
 
-                var marker = L.marker([zone.lat, zone.lon], { icon: icon }).addTo(map);
+                    var marker = L.marker([zone.lat, zone.lon], { icon: icon }).addTo(map);
 
-                // On Click -> Highlight Marker + Open Preview
-                marker.on('click', () => {
-                    // Deselect others
-                    document.querySelectorAll('.marker-wrapper').forEach(el => el.classList.remove('selected'));
-                    // Select current
-                    const el = document.getElementById(markerId);
-                    if (el) el.classList.add('selected');
+                    // On Click -> Highlight Marker + Open Preview
+                    marker.on('click', () => {
+                        // Deselect others
+                        document.querySelectorAll('.marker-wrapper').forEach(el => el.classList.remove('selected'));
+                        // Select current
+                        const el = document.getElementById(markerId);
+                        if (el) el.classList.add('selected');
 
-                    openPreview(zone);
-                    map.flyTo([zone.lat, zone.lon], 15, { paddingBottomRight: [0, 200] });
+                        openPreview(zone);
+                        map.flyTo([zone.lat, zone.lon], 15, { paddingBottomRight: [0, 200] });
+                    });
                 });
             });
-        });
+    }
 
     function openPreview(zone) {
+        // Set all parking location details
         document.getElementById('card-name').innerText = zone.name;
-        // Mock location for now as it's not in API response yet, or reuse logic
         document.getElementById('card-location').innerText = zone.distance ? `${zone.distance} km away` : "Nearby";
-
+        document.getElementById('card-rating').innerText = zone.rating || '4.5';
+        document.getElementById('card-distance').innerText = zone.distance ? `${zone.distance} km` : '0 km';
+        document.getElementById('card-slots').innerText = zone.slots || '0';
+        
+        // Set Book Now button
         document.getElementById('card-btn').href = `/book/${zone.id}`;
+        
+        // Set Navigate button
+        const navigateBtn = document.querySelector('button:has(i.fa-location-arrow)');
+        if (navigateBtn) {
+            navigateBtn.onclick = function() {
+                const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${zone.lat},${zone.lon}`;
+                window.open(mapsUrl, '_blank');
+            };
+        }
 
         const card = document.getElementById('preview-card');
         card.classList.remove('translate-y-[150%]', 'hidden');
@@ -229,6 +245,9 @@
                 userMarker = L.marker([lat, lon], { icon: dotIcon }).addTo(map);
 
                 map.flyTo([lat, lon], 14);
+                
+                // Fetch parking zones for user's actual location
+                fetchAndDisplayZones(lat, lon);
             });
         }
     }
