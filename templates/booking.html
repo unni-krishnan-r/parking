@@ -1,7 +1,12 @@
+{% block nav_override %}
+<style>
+    nav.fixed.bottom-0 { display: none !important; }
+</style>
+{% endblock %}
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="h-full bg-gray-900 flex flex-col">
+<div class="h-full bg-gray-900 flex flex-col text-white pb-32">
 
     <!-- 1. Header -->
     <div class="px-6 pt-8 pb-4 bg-surface rounded-b-3xl shadow-lg z-10 relative">
@@ -79,7 +84,7 @@
 
     <!-- 3. Legend (Footer Overlay) -->
     <div
-        class="fixed bottom-0 left-0 w-full bg-surface/95 backdrop-blur-md border-t border-gray-800 p-6 rounded-t-3xl z-20">
+        class="w-full bg-surface/95 backdrop-blur-md border-t border-gray-800 p-6 rounded-t-3xl z-30 mt-8 mb-4">
 
         <!-- Legend Items -->
         <div class="flex justify-center gap-6 mb-6">

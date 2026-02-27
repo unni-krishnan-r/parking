@@ -14,24 +14,7 @@
 
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-        rel="stylesheet">
-
-    <!-- Tailwind CSS (Full Build) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        surface: '#1A1D21',
-                        border: '#2D3139',
-                        accent: '#F59E0B',
-                        primary: '#8B5CF6'
-                    }
-                }
-            }
-        }
-    </script>
+        rel="stylesheet">   
 </head>
 
 <body>
@@ -51,21 +34,21 @@
     {% endwith %}
 
     <!-- Main Content -->
-    <main class="flex-1 overflow-y-auto" style="padding-bottom: 5rem;">
+    <main class="flex-1 overflow-y-auto mb-20" style="padding-bottom: 5rem;">
         {% block content %}
         {% endblock %}
     </main>
 
     <!-- Sticky Bottom Navigation -->
-    <nav class="fixed bottom-0 w-full glass-nav z-50">
+    <nav class="fixed bottom-0 w-full bg-gray-900 border-t border-gray-800 z-50">
         <div class="flex justify-between items-center h-16 max-w-md mx-auto px-4">
 
-            <a href="{{ url_for('active') }}" class="nav-link {{ 'active' if page == 'active' else '' }}">
+            <a href="{{ url_for('active') }}" class="nav-link {{ 'active' if page == 'active' else '' }} text-white hover:bg-gray-800 transition-colors flex flex-col items-center justify-center flex-1">
                 <i class="fas fa-bolt text-lg"></i>
                 <div class="dot"></div>
             </a>
 
-            <a href="{{ url_for('explore') }}" class="nav-link {{ 'active' if page == 'explore' else '' }}">
+            <a href="{{ url_for('explore') }}" class="nav-link {{ 'active' if page == 'explore' else '' }} text-white hover:bg-gray-800 transition-colors flex flex-col items-center justify-center flex-1">
                 <i class="fas fa-compass text-lg"></i>
                 <div class="dot"></div>
             </a>
@@ -73,18 +56,18 @@
             <!-- Floating Dashboard/Home Button (Center) -->
             <div class="relative" style="top: -1.5rem;">
                 <a href="{{ url_for('dashboard') }}"
-                    class="flex items-center justify-center w-14 h-14 rounded-full bg-primary text-white shadow-lg"
+                    class="flex items-center justify-center w-14 h-14 rounded-full bg-primary text-white shadow-lg border-4 border-gray-900"
                     style="box-shadow: 0 0 15px rgba(139, 92, 246, 0.4);">
                     <i class="fas fa-home text-xl"></i>
                 </a>
             </div>
 
-            <a href="{{ url_for('history') }}" class="nav-link {{ 'active' if page == 'history' else '' }}">
+            <a href="{{ url_for('history') }}" class="nav-link {{ 'active' if page == 'history' else '' }} text-white hover:bg-gray-800 transition-colors flex flex-col items-center justify-center flex-1">
                 <i class="fas fa-receipt text-lg"></i>
                 <div class="dot"></div>
             </a>
 
-            <a href="{{ url_for('profile') }}" class="nav-link {{ 'active' if page == 'profile' else '' }}">
+            <a href="{{ url_for('profile') }}" class="nav-link {{ 'active' if page == 'profile' else '' }} text-white hover:bg-gray-800 transition-colors flex flex-col items-center justify-center flex-1">
                 <i class="fas fa-user text-lg"></i>
                 <div class="dot"></div>
             </a>
