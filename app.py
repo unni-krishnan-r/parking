@@ -41,6 +41,30 @@ def require_login():
 # --- Auth Routes ---
 
 @app.route('/login', methods=['GET', 'POST'])
+@app.route('/add_parking_zone', methods=['GET', 'POST'])
+def add_parking_zone():
+    if request.method == 'POST':
+        name = request.form.get('name')
+        location = request.form.get('location')
+        total_slots = request.form.get('total_slots', type=int)
+        price_per_hour = request.form.get('price_per_hour', type=float)
+        lat = request.form.get('lat', type=float)
+        lon = request.form.get('lon', type=float)
+
+        zone = ParkingZone(
+            name=name,
+            location=location,
+            total_slots=total_slots,
+            price_per_hour=price_per_hour,
+            lat=lat,
+            lon=lon,
+            status='pending'
+        )
+        db.session.add(zone)
+        db.session.commit()
+        flash('Parking zone submitted for approval!', 'info')
+        return redirect(url_for('explore'))
+    return render_template('add_parking_zone.html')
 def login():
     if request.method == 'POST':
         email = request.form.get('email')
@@ -55,6 +79,27 @@ def login():
             flash('Invalid email or password', 'error')
             
     return render_template('login.html', page='auth')
+
+@app.route('/admin/pending_zones')
+def admin_pending_zones():
+    zones = ParkingZone.query.filter_by(status='pending').all()
+    return render_template('admin_pending_zones.html', zones=zones)
+
+@app.route('/admin/approve_zone/<int:zone_id>', methods=['POST'])
+def approve_zone(zone_id):
+    zone = ParkingZone.query.get_or_404(zone_id)
+    zone.status = 'approved'
+    db.session.commit()
+    flash('Zone approved!', 'success')
+    return redirect(url_for('admin_pending_zones'))
+
+@app.route('/admin/reject_zone/<int:zone_id>', methods=['POST'])
+def reject_zone(zone_id):
+    zone = ParkingZone.query.get_or_404(zone_id)
+    zone.status = 'rejected'
+    db.session.commit()
+    flash('Zone rejected.', 'error')
+    return redirect(url_for('admin_pending_zones'))
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():

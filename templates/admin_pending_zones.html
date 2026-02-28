@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-2xl mx-auto p-6">
+    <h2 class="text-2xl font-bold mb-6">Pending Parking Zones</h2>
+    {% if zones %}
+    <table class="w-full mb-6">
+        <thead>
+            <tr class="bg-gray-800 text-white">
+                <th class="p-2">Name</th>
+                <th class="p-2">Location</th>
+                <th class="p-2">Slots</th>
+                <th class="p-2">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for zone in zones %}
+            <tr class="bg-gray-900 text-gray-200">
+                <td class="p-2">{{ zone.name }}</td>
+                <td class="p-2">{{ zone.location }}</td>
+                <td class="p-2">{{ zone.total_slots }}</td>
+                <td class="p-2">
+                    <form method="POST" action="{{ url_for('approve_zone', zone_id=zone.id) }}" style="display:inline;">
+                        <button type="submit" class="bg-green-600 text-white px-3 py-1 rounded">Approve</button>
+                    </form>
+                    <form method="POST" action="{{ url_for('reject_zone', zone_id=zone.id) }}" style="display:inline;">
+                        <button type="submit" class="bg-red-600 text-white px-3 py-1 rounded ml-2">Reject</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="text-gray-400">No pending zones.</p>
+    {% endif %}
+</div>
+{% endblock %}

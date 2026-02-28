@@ -14,16 +14,19 @@ class User(db.Model):
     def __repr__(self):
         return f'<User {self.username}>'
 
+
 class ParkingZone(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     location = db.Column(db.String(200), nullable=False)
     total_slots = db.Column(db.Integer, nullable=False)
-    occupied_slots = db.Column(db.Integer, default=0)
     price_per_hour = db.Column(db.Float, nullable=False)
-    rating = db.Column(db.Float, default=4.5)
     lat = db.Column(db.Float, nullable=True)
     lon = db.Column(db.Float, nullable=True)
+    status = db.Column(db.String(20), default='pending')  # 'pending', 'approved', 'rejected'
+
+    def __repr__(self):
+        return f'<ParkingZone {self.name}>'
 
     def __repr__(self):
         return f'<ParkingZone {self.name}>'

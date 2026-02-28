@@ -43,6 +43,16 @@
             </div>
             <i class="fas fa-chevron-right text-xs text-gray-600"></i>
         </button>
+            <a href="{{ url_for('add_parking_zone') }}"
+               class="w-full bg-surface border border-border p-4 rounded-xl flex justify-between items-center text-green-400 hover:bg-green-700 transition-colors mt-2">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center text-green-400">
+                        <i class="fas fa-plus-circle"></i>
+                    </div>
+                    <span class="text-sm font-medium">Add Zone</span>
+                </div>
+                <i class="fas fa-chevron-right text-xs text-gray-600"></i>
+            </a>
 
         <button
             class="w-full bg-surface border border-border p-4 rounded-xl flex justify-between items-center text-gray-300 hover:bg-gray-800 transition-colors">
