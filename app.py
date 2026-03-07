@@ -40,7 +40,6 @@ def require_login():
 
 # --- Auth Routes ---
 
-@app.route('/login', methods=['GET', 'POST'])
 @app.route('/add_parking_zone', methods=['GET', 'POST'])
 def add_parking_zone():
     if request.method == 'POST':
@@ -65,6 +64,8 @@ def add_parking_zone():
         flash('Parking zone submitted for approval!', 'info')
         return redirect(url_for('explore'))
     return render_template('add_parking_zone.html')
+
+@app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         email = request.form.get('email')

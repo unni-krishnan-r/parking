@@ -20,6 +20,7 @@ class ParkingZone(db.Model):
     name = db.Column(db.String(100), nullable=False)
     location = db.Column(db.String(200), nullable=False)
     total_slots = db.Column(db.Integer, nullable=False)
+    occupied_slots = db.Column(db.Integer, nullable=False, default=0)
     price_per_hour = db.Column(db.Float, nullable=False)
     lat = db.Column(db.Float, nullable=True)
     lon = db.Column(db.Float, nullable=True)
