@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="min-h-screen bg-gray-900 flex flex-col items-center pb-32">
+    <!-- Header -->
+    <div class="w-full max-w-2xl px-4 pt-8 pb-4 bg-surface rounded-b-3xl shadow-lg z-10 relative">
+        <div class="flex items-center justify-between mb-4">
+            <a href="{{ url_for('explore') }}" class="w-10 h-10 rounded-full border border-gray-700 flex items-center justify-center text-white hover:bg-gray-800 transition-colors">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <h1 class="text-lg font-bold text-white tracking-wide">Choose Spot</h1>
+            <div class="w-10"></div>
+        </div>
+        <div class="text-center">
+            <h2 class="text-2xl font-bold text-white mb-1">{{ zone.name }}</h2>
+            <p class="text-gray-400 text-sm">{{ zone.location }}</p>
+        </div>
+    </div>
+    <!-- Legend -->
+    <div class="w-full max-w-2xl px-4 mt-4 flex flex-col gap-3">
+        <div class="flex justify-center gap-6">
+            <div class="flex items-center gap-2"><span class="w-4 h-4 rounded bg-green-500 border border-white"></span><span class="text-xs text-white">Available</span></div>
+            <div class="flex items-center gap-2"><span class="w-4 h-4 rounded bg-red-500 border border-white"></span><span class="text-xs text-white">Occupied</span></div>
+            <div class="flex items-center gap-2"><span class="w-4 h-4 rounded bg-yellow-400 border border-white"></span><span class="text-xs text-white">Reserved</span></div>
+            <div class="flex items-center gap-2"><span class="w-4 h-4 rounded bg-gray-500 border border-white"></span><span class="text-xs text-white">Disabled</span></div>
+        </div>
+    </div>
+    <!-- SVG Parking Lot Map -->
+    <div class="w-full max-w-2xl flex-1 flex flex-col items-center mt-4">
+        <svg viewBox="0 0 400 200" class="w-full h-auto">
+            {% set slots = [
+                {'id': 'A1', 'status': 'available', 'features': ['ev'], 'x': 20, 'y': 40, 'width': 40, 'height': 18, 'label': 'A1'},
+                {'id': 'A2', 'status': 'occupied', 'features': [], 'x': 70, 'y': 40, 'width': 40, 'height': 18, 'label': 'A2'},
+                {'id': 'A3', 'status': 'reserved', 'features': ['handicapped'], 'x': 120, 'y': 40, 'width': 40, 'height': 18, 'label': 'A3'},
+                {'id': 'A4', 'status': 'disabled', 'features': [], 'x': 170, 'y': 40, 'width': 40, 'height': 18, 'label': 'A4'},
+                {'id': 'B1', 'status': 'available', 'features': [], 'x': 20, 'y': 80, 'width': 40, 'height': 18, 'label': 'B1'},
+                {'id': 'B2', 'status': 'occupied', 'features': ['ev'], 'x': 70, 'y': 80, 'width': 40, 'height': 18, 'label': 'B2'},
+                {'id': 'B3', 'status': 'available', 'features': ['covered'], 'x': 120, 'y': 80, 'width': 40, 'height': 18, 'label': 'B3'},
+                {'id': 'B4', 'status': 'reserved', 'features': [], 'x': 170, 'y': 80, 'width': 40, 'height': 18, 'label': 'B4'}
+            ] %}
+            {% for slot in slots %}
+                <rect
+                  x="{{ slot.x }}"
+                  y="{{ slot.y }}"
+                  width="{{ slot.width }}"
+                  height="{{ slot.height }}"
+                  rx="4"
+                  fill="{% if slot.status == 'available' %}#22c55e{% elif slot.status == 'occupied' %}#ef4444{% elif slot.status == 'reserved' %}#facc15{% else %}#6b7280{% endif %}"
+                  stroke="#23272f"
+                  stroke-width="2"
+                  class="cursor-pointer slot-rect"
+                  data-id="{{ slot.id }}"
+                  onclick="selectSlot('{{ slot.id }}', this)"
+                />
+                <text
+                  x="{{ slot.x + slot.width/2 }}"
+                  y="{{ slot.y + slot.height/2 + 4 }}"
+                  text-anchor="middle"
+                  fill="#fff"
+                  font-size="10"
+                  font-weight="bold"
+                >{{ slot.label }}</text>
+                {% if 'ev' in slot.features %}
+                  <text x="{{ slot.x + slot.width/2 }}" y="{{ slot.y + slot.height - 2 }}" text-anchor="middle" fill="#3b82f6" font-size="10">⚡</text>
+                {% endif %}
+                {% if 'handicapped' in slot.features %}
+                  <text x="{{ slot.x + slot.width/2 + 10 }}" y="{{ slot.y + slot.height - 2 }}" text-anchor="middle" fill="#818cf8" font-size="10">♿</text>
+                {% endif %}
+                {% if 'covered' in slot.features %}
+                  <text x="{{ slot.x + slot.width/2 - 10 }}" y="{{ slot.y + slot.height - 2 }}" text-anchor="middle" fill="#06b6d4" font-size="10">☂</text>
+                {% endif %}
+            {% endfor %}
+        </svg>
+    </div>
+    <!-- Floating Detail Card -->
+    <div class="fixed left-0 right-0 bottom-0 z-30">
+        <div class="w-full max-w-md mx-auto bg-surface/95 backdrop-blur-md border-t border-gray-800 p-6 rounded-t-3xl shadow-2xl">
+            <div class="flex items-center gap-4 mb-4">
+                <div class="w-16 h-16 rounded-xl bg-gray-700 flex items-center justify-center text-2xl text-white"><i class="fas fa-car"></i></div>
+                <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="font-bold text-white text-lg" id="detail-slot-label">Select a slot</span>
+                        <span class="text-xs text-blue-400" id="detail-slot-feature"></span>
+                    </div>
+                    <div class="text-gray-400 text-xs" id="detail-slot-desc">Slot details will appear here.</div>
+                </div>
+                <button class="text-red-400 text-xl"><i class="far fa-heart"></i></button>
+            </div>
+            <form action="{{ url_for('start_session', zone_id=zone.id) }}" method="get">
+                <input type="hidden" name="slot" id="selected_slot_input">
+                <button id="main-btn" disabled type="submit" class="w-full bg-gray-800 text-gray-500 font-bold py-4 rounded-2xl transition-all shadow-lg flex justify-center items-center">
+                    <span id="slot-detail-action">Select a spot</span>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+    function selectSlot(slotId, el) {
+        document.querySelectorAll('.slot-rect').forEach(r => r.setAttribute('stroke', '#23272f'));
+        el.setAttribute('stroke', '#f59e0b');
+        document.getElementById('selected_slot_input').value = slotId;
+        document.getElementById('main-btn').disabled = false;
+        document.getElementById('main-btn').classList.remove('bg-gray-800', 'text-gray-500');
+        document.getElementById('main-btn').classList.add('bg-accent', 'text-black');
+        document.getElementById('slot-detail-label').innerText = slotId;
+        document.getElementById('slot-detail-action').innerText = 'Reserve ' + slotId;
+        document.getElementById('detail-slot-desc').innerText = 'Slot ' + slotId + ' is available for booking.';
+        // Example: show feature
+        let feature = '';
+        if (el.nextElementSibling && el.nextElementSibling.textContent.includes('⚡')) feature = 'EV Charging';
+        if (el.nextElementSibling && el.nextElementSibling.textContent.includes('♿')) feature = 'Handicapped';
+        if (el.nextElementSibling && el.nextElementSibling.textContent.includes('☂')) feature = 'Covered';
+        document.getElementById('detail-slot-feature').innerText = feature;
+    }
+</script>
+{% endblock %}

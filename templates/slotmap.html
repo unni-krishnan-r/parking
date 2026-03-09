@@ -1,0 +1,128 @@
+<!--
+This is a new, modern slot selection UI inspired by the reference image.
+It uses a visual parking lot grid, color-coded slots, feature icons, and a floating detail card.
+You can integrate this as a standalone page or partial, and wire up backend logic as needed.
+-->
+{% extends 'base.html' %}
+{% block content %}
+<div class="min-h-screen bg-gray-900 flex flex-col items-center pb-32">
+    <!-- Header -->
+    <div class="w-full max-w-2xl px-4 pt-8 pb-4 bg-surface rounded-b-3xl shadow-lg z-10 relative">
+        <div class="flex items-center justify-between mb-4">
+            <a href="{{ url_for('explore') }}" class="w-10 h-10 rounded-full border border-gray-700 flex items-center justify-center text-white hover:bg-gray-800 transition-colors">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <h1 class="text-lg font-bold text-white tracking-wide">Choose Spot</h1>
+            <div class="w-10"></div>
+        </div>
+        <div class="text-center">
+            <h2 class="text-2xl font-bold text-white mb-1">{{ zone.name }}</h2>
+            <p class="text-gray-400 text-sm">{{ zone.location }}</p>
+        </div>
+    </div>
+    <!-- Filters & Legend -->
+    <div class="w-full max-w-2xl px-4 mt-4 flex flex-col gap-3">
+        <div class="flex gap-2 flex-wrap justify-center">
+            <button class="px-3 py-1 rounded-full bg-surface border border-border text-xs text-white font-bold shadow hover:bg-accent hover:text-black transition-colors">All</button>
+            <button class="px-3 py-1 rounded-full bg-surface border border-border text-xs text-blue-400 font-bold shadow hover:bg-blue-400 hover:text-black transition-colors"><i class="fas fa-bolt mr-1"></i>EV</button>
+            <button class="px-3 py-1 rounded-full bg-surface border border-border text-xs text-indigo-300 font-bold shadow hover:bg-indigo-300 hover:text-black transition-colors"><i class="fas fa-wheelchair mr-1"></i>Handicapped</button>
+            <button class="px-3 py-1 rounded-full bg-surface border border-border text-xs text-cyan-300 font-bold shadow hover:bg-cyan-300 hover:text-black transition-colors"><i class="fas fa-umbrella mr-1"></i>Covered</button>
+        </div>
+        <div class="flex justify-center gap-6">
+            <div class="flex items-center gap-2"><span class="w-4 h-4 rounded bg-green-500 border border-white"></span><span class="text-xs text-white">Available</span></div>
+            <div class="flex items-center gap-2"><span class="w-4 h-4 rounded bg-red-500 border border-white"></span><span class="text-xs text-white">Occupied</span></div>
+            <div class="flex items-center gap-2"><span class="w-4 h-4 rounded bg-yellow-400 border border-white"></span><span class="text-xs text-white">Reserved</span></div>
+            <div class="flex items-center gap-2"><span class="w-4 h-4 rounded bg-gray-500 border border-white"></span><span class="text-xs text-white">Disabled</span></div>
+        </div>
+    </div>
+    <!-- Parking Lot Map/Grid -->
+    <div class="w-full max-w-2xl flex-1 flex flex-col items-center mt-4">
+        <div class="relative w-full h-[340px] sm:h-[420px] bg-gray-800 rounded-3xl shadow-lg overflow-hidden flex flex-col justify-between">
+            <!-- Example: Zone/Section Labels -->
+            <div class="absolute left-4 top-4 text-white font-bold text-lg">Zone A</div>
+            <div class="absolute right-4 top-4 text-white font-bold text-lg">Zone B</div>
+            <!-- SVG or grid for slots -->
+            <div class="absolute inset-0 flex flex-col justify-center items-center">
+                <div class="grid grid-cols-6 gap-3">
+                    {% for i in range(1, 19) %}
+                    {% set status = 'available' %}
+                    {% if i in [2, 5, 8] %}{% set status = 'occupied' %}{% endif %}
+                    {% if i in [3, 7] %}{% set status = 'reserved' %}{% endif %}
+                    {% if i in [6] %}{% set status = 'disabled' %}{% endif %}
+                    <div onclick="selectSlot('S{{i}}', this)" class="slot-card {{ status }} flex flex-col items-center justify-center cursor-pointer transition-all duration-150" data-id="S{{i}}">
+                        <span class="font-bold text-xs">S{{i}}</span>
+                        <div class="flex gap-1 mt-1">
+                            {% if i == 4 %}<i class="fas fa-bolt text-blue-400"></i>{% endif %}
+                            {% if i == 9 %}<i class="fas fa-wheelchair text-indigo-300"></i>{% endif %}
+                            {% if i == 12 %}<i class="fas fa-umbrella text-cyan-300"></i>{% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Floating Detail Card -->
+    <div class="fixed left-0 right-0 bottom-0 z-30">
+        <div class="w-full max-w-md mx-auto bg-surface/95 backdrop-blur-md border-t border-gray-800 p-6 rounded-t-3xl shadow-2xl">
+            <div class="flex items-center gap-4 mb-4">
+                <div class="w-16 h-16 rounded-xl bg-gray-700 flex items-center justify-center text-2xl text-white"><i class="fas fa-car"></i></div>
+                <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="font-bold text-white text-lg" id="detail-slot-label">Select a slot</span>
+                        <span class="text-xs text-blue-400" id="detail-slot-feature"></span>
+                    </div>
+                    <div class="text-gray-400 text-xs" id="detail-slot-desc">Slot details will appear here.</div>
+                </div>
+                <button class="text-red-400 text-xl"><i class="far fa-heart"></i></button>
+            </div>
+            <form action="{{ url_for('start_session', zone_id=zone.id) }}" method="get">
+                <input type="hidden" name="slot" id="selected_slot_input">
+                <button id="main-btn" disabled type="submit" class="w-full bg-gray-800 text-gray-500 font-bold py-4 rounded-2xl transition-all shadow-lg flex justify-center items-center">
+                    <span id="slot-detail-action">Select a spot</span>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+<style>
+    .slot-card {
+        width: 44px;
+        height: 64px;
+        border-radius: 12px;
+        border: 2px solid #23272f;
+        background: #23272f;
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+    }
+    .slot-card.available { background: #22c55e; border-color: #22c55e; color: #fff; }
+    .slot-card.occupied { background: #ef4444; border-color: #ef4444; color: #fff; cursor: not-allowed; }
+    .slot-card.reserved { background: #facc15; border-color: #facc15; color: #fff; }
+    .slot-card.disabled { background: #6b7280; border-color: #6b7280; color: #fff; cursor: not-allowed; }
+    .slot-card.selected { box-shadow: 0 0 0 3px #f59e0b, 0 2px 8px rgba(0,0,0,0.08); border-color: #f59e0b; }
+</style>
+<script>
+    function selectSlot(slotId, el) {
+        if (el.classList.contains('occupied') || el.classList.contains('disabled')) return;
+        document.querySelectorAll('.slot-card').forEach(btn => btn.classList.remove('selected'));
+        el.classList.add('selected');
+        document.getElementById('selected_slot_input').value = slotId;
+        document.getElementById('main-btn').disabled = false;
+        document.getElementById('main-btn').classList.remove('bg-gray-800', 'text-gray-500');
+        document.getElementById('main-btn').classList.add('bg-accent', 'text-black');
+        document.getElementById('slot-detail-label').innerText = slotId;
+        document.getElementById('slot-detail-action').innerText = 'Reserve ' + slotId;
+        document.getElementById('detail-slot-desc').innerText = 'Slot ' + slotId + ' is available for booking.';
+        // Example: show feature
+        let feature = '';
+        if (el.querySelector('.fa-bolt')) feature = 'EV Charging';
+        if (el.querySelector('.fa-wheelchair')) feature = 'Handicapped';
+        if (el.querySelector('.fa-umbrella')) feature = 'Covered';
+        document.getElementById('detail-slot-feature').innerText = feature;
+    }
+</script>
+{% endblock %}

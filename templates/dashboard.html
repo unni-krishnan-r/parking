@@ -1,32 +1,32 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="max-w-md mx-auto min-h-full px-5 pt-8 bg-gray-900 text-white">
+<div class="w-full max-w-lg md:max-w-2xl mx-auto min-h-screen px-2 sm:px-5 pt-6 sm:pt-8 bg-gray-900 text-white">
 
     <!-- Hero Header -->
-    <div class="mb-6">
-        <h1 class="text-3xl font-extrabold text-white leading-tight mb-1">
-            Smart Parking <br> <span class="text-muted font-medium text-2xl">Made Simple.</span>
+    <div class="mb-4 sm:mb-6">
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-white leading-tight mb-1">
+            Smart Parking <br> <span class="text-muted font-medium text-lg sm:text-2xl">Made Simple.</span>
         </h1>
     </div>
 
     <!-- Search Bar -->
-    <form action="{{ url_for('dashboard') }}" method="get" class="mb-6 relative z-10">
+    <form action="{{ url_for('dashboard') }}" method="get" class="mb-4 sm:mb-6 relative z-10">
         <div
-            class="flex items-center w-full bg-surface border border-border rounded-full p-1.5 pl-4 pill-shadow focus-within:ring-2 focus-within:ring-primary focus-within:border-transparent transition-all">
-            <i class="fas fa-search text-gray-500 text-lg mr-3"></i>
+            class="flex items-center w-full bg-surface border border-border rounded-full p-1 sm:p-1.5 pl-2 sm:pl-4 pill-shadow focus-within:ring-2 focus-within:ring-primary focus-within:border-transparent transition-all">
+            <i class="fas fa-search text-gray-500 text-base sm:text-lg mr-2 sm:mr-3"></i>
             <input type="text" name="q" value="{{ search_query }}"
-                class="flex-1 bg-transparent border-none text-white placeholder-gray-500 focus:outline-none h-12 text-base shadow-none ring-0 focus:ring-0 active:bg-transparent"
+                class="flex-1 bg-transparent border-none text-white placeholder-gray-500 focus:outline-none h-9 sm:h-12 text-sm sm:text-base shadow-none ring-0 focus:ring-0 active:bg-transparent"
                 style="background-color: transparent !important;" placeholder="Search location...">
             <button type="submit"
-                class="w-11 h-11 bg-gray-800 rounded-full flex items-center justify-center text-accent hover:bg-gray-700 transition-colors shadow-lg ml-2">
+                class="w-9 h-9 sm:w-11 sm:h-11 bg-gray-800 rounded-full flex items-center justify-center text-accent hover:bg-gray-700 transition-colors shadow-lg ml-2">
                 <i class="fas fa-arrow-right"></i>
             </button>
         </div>
     </form>
 
     <!-- Quick Toggles -->
-    <div class="flex gap-3 mb-8">
+    <div class="flex gap-2 sm:gap-3 mb-6 sm:mb-8 flex-wrap">
         <button onclick="findNearby()"
             class="px-5 py-2 rounded-full bg-surface border border-border text-sm text-gray-300 font-medium flex items-center gap-2 hover:border-accent hover:text-white transition-colors">
             <i class="fas fa-location-arrow text-accent text-xs"></i> Near Me
@@ -68,7 +68,7 @@
     <!-- Feature Grid -->
 
     <!-- Vehicle Type Selector -->
-    <div class="flex gap-4 overflow-x-auto pb-4 mb-4 scrollbar-hide">
+    <div class="flex gap-2 sm:gap-4 overflow-x-auto pb-2 sm:pb-4 mb-2 sm:mb-4 scrollbar-hide">
         <button
             class="flex flex-col items-center justify-center min-w-[5rem] h-20 bg-accent text-black rounded-2xl shadow-lg transition-transform hover:scale-105">
             <i class="fas fa-car text-2xl mb-1"></i>
@@ -87,48 +87,40 @@
     </div>
 
     <!-- List Header -->
-    <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-bold text-white">Nearby Space</h2>
+    <div class="flex items-center justify-between mb-2 sm:mb-4">
+        <h2 class="text-base sm:text-lg font-bold text-white">Nearby Space</h2>
         <a href="#" class="text-xs text-accent font-bold">SEE ALL</a>
     </div>
 
     <!-- Listings (New Layout) -->
-    <div class="space-y-4 pb-4">
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 pb-2 sm:pb-4">
         {% for zone in zones %}
-        <div class="bg-surface rounded-2xl p-4 border border-border relative overflow-hidden flex gap-4">
-
+        <div class="bg-surface rounded-2xl p-3 sm:p-4 border border-border relative overflow-hidden flex flex-col items-center">
             <!-- Thumbnail (Placeholder) -->
-            <div class="w-24 h-24 bg-gray-800 rounded-xl flex items-center justify-center flex-shrink-0">
-                <i class="fas fa-parking text-3xl text-gray-600"></i>
+            <div class="w-20 h-20 sm:w-24 sm:h-24 bg-gray-800 rounded-xl flex items-center justify-center flex-shrink-0 mb-2">
+                <i class="fas fa-parking text-2xl sm:text-3xl text-gray-600"></i>
             </div>
-
-            <div class="flex-1 flex flex-col justify-between">
+            <div class="w-full flex-1 flex flex-col justify-between items-center text-center">
                 <div>
-                    <h3 class="text-base font-bold text-white leading-tight mb-1">{{ zone.name }}</h3>
+                    <h3 class="text-sm sm:text-base font-bold text-white leading-tight mb-1">{{ zone.name }}</h3>
                     <p class="text-xs text-gray-500 truncate">{{ zone.location }}</p>
                 </div>
-
-                <div class="flex items-center justify-between mt-2">
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs font-bold text-white flex items-center">
-                            <i class="fas fa-star text-yellow-500 text-[10px] mr-1"></i> {{ zone.rating }}
-                        </span>
-                    </div>
-                    <span class="text-white font-bold text-sm">₹{{ zone.price_per_hour|int }}<span
-                            class="text-gray-500 text-xs font-normal">/hr</span></span>
+                <div class="flex items-center justify-between mt-2 w-full px-2">
+                    <span class="text-xs font-bold text-white flex items-center">
+                        <i class="fas fa-star text-yellow-500 text-[10px] mr-1"></i> {{ zone.rating }}
+                    </span>
+                    <span class="text-white font-bold text-xs sm:text-sm">₹{{ zone.price_per_hour|int }}<span class="text-gray-500 text-xs font-normal">/hr</span></span>
                 </div>
             </div>
-
             <!-- CTA Overlay Link -->
-            <a href="{{ url_for('book_slot', zone_id=zone.id) }}" class="absolute inset-0 z-20"
-                aria-label="Park here"></a>
+            <a href="{{ url_for('book_slot', zone_id=zone.id) }}" class="absolute inset-0 z-20" aria-label="Park here"></a>
         </div>
         {% endfor %}
 
         {% if not zones %}
-        <div class="text-center py-10 opacity-50">
-            <i class="fas fa-search text-3xl mb-3"></i>
-            <p>No zones found here.</p>
+        <div class="col-span-2 md:col-span-3 text-center py-8 sm:py-10 opacity-50">
+            <i class="fas fa-search text-2xl sm:text-3xl mb-2 sm:mb-3"></i>
+            <p class="text-xs sm:text-base">No zones found here.</p>
         </div>
         {% endif %}
 

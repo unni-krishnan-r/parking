@@ -2,50 +2,44 @@
 
 {% block content %}
 
-<div class="relative w-full bg-gray-900" style="height: calc(100vh - 4rem);">
+<div class="relative w-full bg-gray-900 min-h-screen md:min-h-[calc(100vh-4rem)]">
     <!-- 1. Map Container -->
-    <div id="map" class="absolute inset-0 z-0" style="height: 100%; width: 100%;"></div>
+    <div id="map" class="absolute inset-0 z-0 w-full h-full"></div>
 </div>
 
 <!-- 2. Search & Filter Overlay (Fixed Top) -->
-<div class="fixed top-6 left-4 right-4 z-[100] flex flex-col gap-3 pointer-events-none">
+<div class="fixed top-4 left-2 right-2 sm:top-6 sm:left-4 sm:right-4 z-[100] flex flex-col gap-2 sm:gap-3 pointer-events-none">
     <!-- Search Bar -->
     <div
         class="bg-surface/95 backdrop-blur-md border border-border rounded-full p-1 shadow-2xl flex items-center pointer-events-auto">
-        <div class="w-10 h-10 flex items-center justify-center text-gray-400 ml-1">
+        <div class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-gray-400 ml-1">
             <i class="fas fa-search"></i>
         </div>
         <input type="text" placeholder="Find a parking spot..."
-            class="bg-transparent border-none text-white focus:outline-none w-full h-10 text-sm placeholder-gray-500"
+            class="bg-transparent border-none text-white focus:outline-none w-full h-8 sm:h-10 text-xs sm:text-sm placeholder-gray-500"
             onclick="showRecentSearches()">
-        <div class="w-10 h-10 flex items-center justify-center text-accent border-l border-gray-700">
+        <div class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-accent border-l border-gray-700">
             <i class="fas fa-microphone"></i>
         </div>
     </div>
 
     <!-- Category Pills -->
-    <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide pointer-events-auto">
-        <button class="px-4 py-2 rounded-full bg-accent text-black text-xs font-bold shadow-lg whitespace-nowrap">Near
-            Me</button>
-        <button
-            class="px-4 py-2 rounded-full bg-surface/90 border border-border text-white text-xs font-bold shadow-lg whitespace-nowrap backdrop-blur-sm">Top
-            Rated</button>
-        <button
-            class="px-4 py-2 rounded-full bg-surface/90 border border-border text-white text-xs font-bold shadow-lg whitespace-nowrap backdrop-blur-sm">Lowest
-            Price</button>
-        <button
-            class="px-4 py-2 rounded-full bg-surface/90 border border-border text-white text-xs font-bold shadow-lg whitespace-nowrap backdrop-blur-sm">Covered</button>
+    <div class="flex gap-1 sm:gap-2 overflow-x-auto pb-1 sm:pb-2 scrollbar-hide pointer-events-auto">
+        <button class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-accent text-black text-xs font-bold shadow-lg whitespace-nowrap">Near Me</button>
+        <button class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-surface/90 border border-border text-white text-xs font-bold shadow-lg whitespace-nowrap backdrop-blur-sm">Top Rated</button>
+        <button class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-surface/90 border border-border text-white text-xs font-bold shadow-lg whitespace-nowrap backdrop-blur-sm">Lowest Price</button>
+        <button class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-surface/90 border border-border text-white text-xs font-bold shadow-lg whitespace-nowrap backdrop-blur-sm">Covered</button>
     </div>
 </div>
 
 <!-- 3. Preview Card (Fixed Bottom) -->
 <div id="preview-card"
-    class="fixed bottom-6 left-4 right-4 z-[100] transform translate-y-[150%] transition-transform duration-300 ease-out max-w-2xl mx-auto">
+    class="fixed bottom-4 left-2 right-2 sm:bottom-6 sm:left-4 sm:right-4 z-[100] transform translate-y-[150%] transition-transform duration-300 ease-out max-w-lg sm:max-w-2xl mx-auto">
     <div class="bg-surface border border-border rounded-2xl p-6 shadow-2xl flex flex-col gap-5 relative w-full">
         <!-- Close Button -->
         <button onclick="closePreview()"
-            class="absolute -top-4 -right-4 w-10 h-10 bg-gray-800 rounded-full border border-gray-600 flex items-center justify-center text-white shadow-lg z-50 hover:bg-gray-700">
-            <i class="fas fa-times text-sm"></i>
+            class="absolute -top-3 -right-3 sm:-top-4 sm:-right-4 w-8 h-8 sm:w-10 sm:h-10 bg-gray-800 rounded-full border border-gray-600 flex items-center justify-center text-white shadow-lg z-50 hover:bg-gray-700">
+            <i class="fas fa-times text-xs sm:text-sm"></i>
         </button>
 
         <!-- Header Info -->
@@ -74,7 +68,7 @@
         </div>
 
         <!-- Action Buttons -->
-        <div class="flex gap-3">
+        <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <!-- Navigate Button -->
             <button
                 class="flex-1 bg-gray-700 hover:bg-gray-600 text-blue-300 font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors">
@@ -95,8 +89,8 @@
 
 <!-- Geo-Locate Button -->
 <button onclick="locateUser()"
-    class="fixed bottom-28 right-4 z-[90] w-12 h-12 bg-surface border border-border rounded-full flex items-center justify-center text-white shadow-lg active:scale-95 transition-transform hover:text-accent">
-    <i class="fas fa-crosshairs text-lg"></i>
+    class="fixed bottom-24 right-2 sm:bottom-28 sm:right-4 z-[90] w-10 h-10 sm:w-12 sm:h-12 bg-surface border border-border rounded-full flex items-center justify-center text-white shadow-lg active:scale-95 transition-transform hover:text-accent">
+    <i class="fas fa-crosshairs text-base sm:text-lg"></i>
 </button>
 
 <!-- Styles & Scripts -->
@@ -169,29 +163,45 @@
             .then(response => response.json())
             .then(data => {
                 data.zones.forEach(zone => {
-                    const markerId = `marker-${zone.id}`;
+                    zone.slots.forEach(slot => {
+                        const markerId = `marker-${zone.id}-${slot.id}`;
+                        // Determine color based on slot status
+                        let statusColor = 'bg-green-500';
+                        if (slot.status === 'occupied') statusColor = 'bg-red-500';
+                        else if (slot.status === 'reserved') statusColor = 'bg-yellow-400';
+                        else if (slot.status === 'disabled') statusColor = 'bg-gray-500';
 
-                    var icon = L.divIcon({
-                        className: 'custom-div-icon',
-                        html: `<div id="${markerId}" class="marker-wrapper">
-                                 <div class="price-badge">₹${zone.price}</div>
-                               </div>`,
-                        iconSize: [50, 50],
-                        iconAnchor: [25, 25]
-                    });
+                        // Icons for slot features
+                        let featureIcons = '';
+                        if (slot.ev) featureIcons += '<i class="fas fa-bolt text-blue-400 mr-1"></i>';
+                        if (slot.handicapped) featureIcons += '<i class="fas fa-wheelchair text-indigo-300 mr-1"></i>';
+                        if (slot.covered) featureIcons += '<i class="fas fa-umbrella text-cyan-300 mr-1"></i>';
 
-                    var marker = L.marker([zone.lat, zone.lon], { icon: icon }).addTo(map);
+                        var icon = L.divIcon({
+                            className: 'custom-div-icon',
+                            html: `<div id="${markerId}" class="marker-wrapper">
+                                <div class="price-badge ${statusColor}">
+                                    ${slot.zoneLabel} ${slot.label}<br>
+                                    ${featureIcons}
+                                </div>
+                            </div>`,
+                            iconSize: [50, 50],
+                            iconAnchor: [25, 25]
+                        });
 
-                    // On Click -> Highlight Marker + Open Preview
-                    marker.on('click', () => {
-                        // Deselect others
-                        document.querySelectorAll('.marker-wrapper').forEach(el => el.classList.remove('selected'));
-                        // Select current
-                        const el = document.getElementById(markerId);
-                        if (el) el.classList.add('selected');
+                        var marker = L.marker([slot.lat, slot.lon], { icon: icon }).addTo(map);
 
-                        openPreview(zone);
-                        map.flyTo([zone.lat, zone.lon], 15, { paddingBottomRight: [0, 200] });
+                        // On Click -> Highlight Marker + Open Preview
+                        marker.on('click', () => {
+                            // Deselect others
+                            document.querySelectorAll('.marker-wrapper').forEach(el => el.classList.remove('selected'));
+                            // Select current
+                            const el = document.getElementById(markerId);
+                            if (el) el.classList.add('selected');
+
+                            openPreview(slot);
+                            map.flyTo([slot.lat, slot.lon], 17, { paddingBottomRight: [0, 200] });
+                        });
                     });
                 });
             });
