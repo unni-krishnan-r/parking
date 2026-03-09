@@ -6,138 +6,557 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="h-full bg-gray-900 flex flex-col text-white pb-32">
-    <!-- Header -->
-    <div class="px-4 pt-8 pb-4 bg-surface rounded-b-3xl shadow-lg z-10 relative">
-        <div class="flex items-center justify-between mb-4">
-            <a href="{{ url_for('explore') }}" class="w-10 h-10 rounded-full border border-gray-700 flex items-center justify-center text-white hover:bg-gray-800 transition-colors">
-                <i class="fas fa-arrow-left"></i>
-            </a>
-            <h1 class="text-lg font-bold text-white tracking-wide">Choose Spot</h1>
-            <div class="w-10"></div>
-        </div>
-        <div class="text-center">
-            <h2 class="text-2xl font-bold text-white mb-1">{{ zone.name }}</h2>
-            <p class="text-gray-400 text-sm">{{ zone.location }}</p>
+<div class="h-[100dvh] bg-[#0c0f14] flex flex-col font-sans overflow-hidden">
+    <!-- Header App-Like -->
+    <div class="px-5 pt-8 pb-4 flex items-center justify-between z-10 shrink-0">
+        <a href="{{ url_for('dashboard') }}" class="w-10 h-10 flex items-center text-white/80 hover:text-white transition-colors">
+            <i class="fas fa-chevron-left text-xl"></i>
+        </a>
+        <h1 class="text-xl font-bold text-white tracking-wide">{{ zone.name }}</h1>
+        <button class="w-10 h-10 flex items-center justify-end text-white/80 hover:text-white">
+            <i class="fas fa-list-ul text-lg"></i>
+        </button>
+    </div>
+
+    <!-- Canvas Map Container -->
+    <div class="flex-1 relative overflow-hidden bg-gradient-to-br from-[#12161b] to-[#0c0f14]" id="canvas-container">
+        
+        <!-- The High-Performance Canvas -->
+        <canvas id="parkingCanvas" class="absolute inset-0 cursor-grab"></canvas>
+        
+        <!-- Embedded JSON Data -->
+        <script type="application/json" id="layoutData">
+            {{ layout_json | safe }}
+        </script>
+
+        <!-- Bottom Controls (Legend / Filters) -->
+        <div class="absolute bottom-6 left-0 right-0 flex justify-center gap-4 z-20 pointer-events-none" id="map-controls">
+            <button class="pointer-events-auto bg-[#1a1f26] border border-white/10 text-white/70 px-4 py-2 rounded-full shadow-xl flex items-center gap-2 text-sm hover:text-white hover:bg-[#232833] transition-colors" id="btn-filters"><i class="fas fa-sliders-h"></i> Filters</button>
+            <button class="pointer-events-auto bg-[#1a1f26] border border-white/10 text-white/70 px-4 py-2 rounded-full shadow-xl flex items-center gap-2 text-sm hover:text-white hover:bg-[#232833] transition-colors" onclick="resetCamera()" id="btn-reset-view"><i class="fas fa-crosshairs"></i> Reset View</button>
+            <button class="hidden pointer-events-auto bg-blue-600 border border-blue-500 text-white px-4 py-2 rounded-full shadow-xl flex items-center gap-2 text-sm hover:bg-blue-500 transition-colors" onclick="goBackToFacility()" id="btn-back-facility"><i class="fas fa-arrow-left"></i> Back to Zones</button>
         </div>
     </div>
-    <!-- Controls & Filters -->
-    <div class="px-4 py-4 flex flex-col gap-4 flex-1 overflow-hidden">
-        <div class="flex flex-col sm:flex-row justify-between items-center gap-2">
-            <div class="relative w-full sm:w-auto">
-                <select class="appearance-none bg-surface border border-accent text-accent font-bold py-2 pl-4 pr-10 rounded-xl focus:outline-none cursor-pointer w-full sm:w-auto">
-                    <option>1st Floor</option>
-                    <option>2nd Floor</option>
-                    <option>3rd Floor</option>
-                </select>
-                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-accent">
-                    <i class="fas fa-chevron-down text-xs"></i>
+
+    <!-- Selection Bottom Sheet -->
+    <div id="booking-sheet" class="fixed left-0 right-0 bottom-0 z-50 transform translate-y-full transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]">
+        <div class="w-full max-w-md mx-auto bg-[#1a1f26] border border-white/5 p-6 rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex flex-col gap-5">
+            
+            <!-- Header: Slot Name & Heart -->
+            <div class="flex justify-between items-start">
+                <div>
+                    <h2 class="text-3xl font-bold text-white mb-2 leading-none">Slot <span id="sheet-slot">--</span></h2>
+                    <p class="text-white/50 text-sm flex items-center gap-1.5" id="sheet-zone"><i class="fas fa-map-marker-alt text-blue-500"></i> <span id="sheet-dist">Zone A</span></p>
+                </div>
+                <div class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-red-500 cursor-pointer hover:bg-white/10 transition-colors">
+                    <i class="fas fa-heart"></i>
                 </div>
             </div>
-            <span class="text-sm text-green-400 font-bold">{{ zone.total_slots - zone.occupied_slots }} Slots Available</span>
-        </div>
-        <!-- Filters (future: add filter logic) -->
-        <div class="flex gap-2 flex-wrap justify-center sm:justify-start">
-            <button class="px-3 py-1 rounded-full bg-surface border border-border text-xs text-white font-bold shadow hover:bg-accent hover:text-black transition-colors">All</button>
-            <button class="px-3 py-1 rounded-full bg-surface border border-border text-xs text-blue-400 font-bold shadow hover:bg-blue-400 hover:text-black transition-colors"><i class="fas fa-bolt mr-1"></i>EV</button>
-            <button class="px-3 py-1 rounded-full bg-surface border border-border text-xs text-indigo-300 font-bold shadow hover:bg-indigo-300 hover:text-black transition-colors"><i class="fas fa-wheelchair mr-1"></i>Handicapped</button>
-            <button class="px-3 py-1 rounded-full bg-surface border border-border text-xs text-cyan-300 font-bold shadow hover:bg-cyan-300 hover:text-black transition-colors"><i class="fas fa-umbrella mr-1"></i>Covered</button>
-        </div>
-        <!-- Slot Grid -->
-        <div class="flex-1 overflow-y-auto scrollbar-hide">
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 pb-24">
-                {% for i in range(1, 13) %}
-                {% set status = 'occupied' if i in [2, 5, 8] else 'available' %}
-                <div onclick="selectSlot('A{{i}}', this)" class="slot-btn {{ status }} flex flex-col items-center justify-center relative" data-id="A{{i}}">
-                    <span class="font-bold text-sm">A{{i}}</span>
-                    {% if status == 'occupied' %}
-                        <i class="fas fa-car-side text-lg text-gray-500 mt-1"></i>
-                    {% endif %}
-                    <!-- Example feature icons -->
-                    <div class="flex gap-1 mt-1">
-                        {% if i == 3 %}<i class="fas fa-bolt text-blue-400"></i>{% endif %}
-                        {% if i == 4 %}<i class="fas fa-wheelchair text-indigo-300"></i>{% endif %}
-                        {% if i == 6 %}<i class="fas fa-umbrella text-cyan-300"></i>{% endif %}
-                    </div>
+
+            <!-- Features -->
+            <div class="flex gap-3" id="sheet-features">
+                <div class="bg-green-500/10 border border-green-500/20 text-green-400 px-3 py-1.5 rounded-full text-xs font-semibold flex flex-row items-center gap-1.5">
+                    <i class="fas fa-leaf"></i> Standard
                 </div>
-                {% endfor %}
             </div>
-        </div>
-    </div>
-    <!-- Floating Detail Card & Legend -->
-    <div class="fixed left-0 right-0 bottom-0 z-30">
-        <div class="w-full max-w-md mx-auto bg-surface/95 backdrop-blur-md border-t border-gray-800 p-6 rounded-t-3xl shadow-2xl">
-            <!-- Legend -->
-            <div class="flex justify-center gap-6 mb-4">
-                <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-sm bg-accent border border-accent"></div><span class="text-xs text-gray-400">Selected</span></div>
-                <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-sm bg-gray-700 text-gray-500 flex items-center justify-center"><i class="fas fa-car text-[8px]"></i></div><span class="text-xs text-gray-400">Occupied</span></div>
-                <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-sm border border-gray-600"></div><span class="text-xs text-gray-400">Available</span></div>
+
+            <!-- Price -->
+            <div class="text-white flex items-baseline gap-1 mt-1">
+                <span class="text-2xl font-bold">₹{{ zone.price_per_hour|int }}</span>
+                <span class="text-white/40 text-sm">/ hour</span>
             </div>
-            <!-- Slot Detail & Action -->
-            <form action="{{ url_for('start_session', zone_id=zone.id) }}" method="get">
+
+            <!-- Form & Action -->
+            <form action="{{ url_for('start_session', zone_id=zone.id) }}" method="get" class="mt-2">
                 <input type="hidden" name="slot" id="selected_slot_input">
-                <button id="main-btn" disabled type="submit" class="w-full bg-gray-800 text-gray-500 font-bold py-4 rounded-2xl transition-all shadow-lg flex justify-between px-6 items-center">
-                    <span id="slot-detail-label">Select a spot</span>
-                    <span class="bg-gray-700 px-3 py-1 rounded-lg text-xs">₹{{ zone.price_per_hour|int }}/hr</span>
+                <button id="reserve-btn" type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-3 transition-colors shadow-lg shadow-blue-600/20">
+                    <span class="text-lg">Reserve Now</span>
+                    <i class="fas fa-arrow-right"></i>
                 </button>
             </form>
         </div>
     </div>
 </div>
 
-<style>
-    .slot-btn {
-        min-height: 4.5rem;
-        background-color: var(--surface-color);
-        border: 1.5px solid #374151;
-        border-radius: 1rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: 600;
-        font-size: 1rem;
-        cursor: pointer;
-        transition: all 0.2s;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    }
-    .slot-btn.available:hover {
-        border-color: var(--accent-color);
-        background-color: rgba(245, 158, 11, 0.1);
-    }
-    .slot-btn.selected {
-        background-color: rgba(245, 158, 11, 0.2);
-        border-color: var(--accent-color);
-        color: var(--accent-color);
-        box-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
-    }
-    .slot-btn.occupied {
-        background-color: #1F2937;
-        border-color: transparent;
-        color: #4B5563;
-        cursor: not-allowed;
-    }
-</style>
-
+<!-- Canvas Engine Logic -->
 <script>
-    function selectSlot(slotId, el) {
-        if (el.classList.contains('occupied')) return;
+    const canvas = document.getElementById('parkingCanvas');
+    const ctx = canvas.getContext('2d', { alpha: false }); // Optimize
+    const container = document.getElementById('canvas-container');
+    
+    // Parse Layout Data
+    const rawData = document.getElementById('layoutData').textContent;
+    const layout = JSON.parse(rawData);
+    const zones = layout.zones || [];
+    const world = layout.world;
 
-        // Deselect all
-        document.querySelectorAll('.slot-btn').forEach(btn => btn.classList.remove('selected'));
+    // View States
+    // 'facility' -> show big zones
+    // 'zone' -> show slots inside the active zone
+    let viewMode = 'facility'; 
+    let activeZone = null;
 
-        // Select this
-        el.classList.add('selected');
+    // Camera Status
+    let camera = { x: 0, y: 0, zoom: 1 };
+    let isDragging = false;
+    let lastMouse = { x: 0, y: 0 };
+    
+    let hoveredZone = null;
+    let selectedSlot = null;
+    let hoveredSlot = null;
 
-        // Update Form
-        document.getElementById('selected_slot_input').value = slotId;
-
-        // Update Button
-        const btn = document.getElementById('main-btn');
-        btn.disabled = false;
-        btn.classList.remove('bg-gray-800', 'text-gray-500');
-        btn.classList.add('bg-accent', 'text-black');
-        btn.querySelector('span:first-child').innerText = "Continue with " + slotId;
+    // Resize Canvas to Window
+    function resizeCanvas() {
+        const dpr = window.devicePixelRatio || 1;
+        const rect = container.getBoundingClientRect();
+        
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        
+        canvas.style.width = `${rect.width}px`;
+        canvas.style.height = `${rect.height}px`;
+        
+        ctx.scale(dpr, dpr);
+        
+        if(camera.zoom === 1 && camera.x === 0 && camera.y === 0) {
+           resetCamera();
+        } else {
+           render();
+        }
     }
+
+    function resetCamera() {
+       const rect = container.getBoundingClientRect();
+       const scaleX = rect.width / world.width;
+       const scaleY = rect.height / world.height;
+       
+       camera.zoom = Math.min(scaleX, scaleY) * 0.9; // 90% fit
+       if (camera.zoom > 2) camera.zoom = 2;
+       if (camera.zoom < 0.1) camera.zoom = 0.1;
+
+       camera.x = (rect.width - (world.width * camera.zoom)) / 2;
+       camera.y = (rect.height - (world.height * camera.zoom)) / 2;
+       render();
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    // --- Interaction ---
+    canvas.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        lastMouse = { x: e.clientX, y: e.clientY };
+        canvas.classList.add('cursor-grabbing');
+        canvas.classList.remove('cursor-grab');
+    });
+
+    window.addEventListener('mouseup', () => {
+        isDragging = false;
+        canvas.classList.remove('cursor-grabbing');
+        canvas.classList.add('cursor-grab');
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+            const dx = e.clientX - lastMouse.x;
+            const dy = e.clientY - lastMouse.y;
+            camera.x += dx;
+            camera.y += dy;
+            lastMouse = { x: e.clientX, y: e.clientY };
+            requestAnimationFrame(render);
+        } else {
+            const worldPos = screenToWorld(e.clientX - container.getBoundingClientRect().left, e.clientY - container.getBoundingClientRect().top);
+            
+            if (viewMode === 'facility') {
+                const hit = findHitZone(worldPos.x, worldPos.y);
+                if(hoveredZone !== hit) {
+                    hoveredZone = hit;
+                    canvas.style.cursor = hoveredZone ? 'pointer' : 'grab';
+                    requestAnimationFrame(render);
+                }
+            } else if (viewMode === 'zone') {
+                const hit = findHitSlot(worldPos.x, worldPos.y);
+                if(hoveredSlot !== hit) {
+                    hoveredSlot = hit;
+                    canvas.style.cursor = hoveredSlot && (hoveredSlot.status === 'available' || hoveredSlot.status === 'reserved') ? 'pointer' : 'grab';
+                    requestAnimationFrame(render);
+                }
+            }
+        }
+    });
+
+    canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        const worldX = (mouseX - camera.x) / camera.zoom;
+        const worldY = (mouseY - camera.y) / camera.zoom;
+
+        const zoomSpeed = 0.1;
+        if (e.deltaY < 0) camera.zoom *= (1 + zoomSpeed);
+        else camera.zoom *= (1 - zoomSpeed);
+
+        camera.zoom = Math.max(0.05, Math.min(camera.zoom, 5));
+
+        camera.x = mouseX - (worldX * camera.zoom);
+        camera.y = mouseY - (worldY * camera.zoom);
+
+        requestAnimationFrame(render);
+    }, { passive: false });
+
+    // Touch Support for Mobile
+    let pinchStartDist = 0;
+    
+    canvas.addEventListener('touchstart', (e) => {
+        if(e.touches.length === 1) {
+            isDragging = true;
+            lastMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        } else if (e.touches.length === 2) {
+            isDragging = false;
+            pinchStartDist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+        }
+    });
+
+    canvas.addEventListener('touchmove', (e) => {
+        if (isDragging && e.touches.length === 1) {
+            const dx = e.touches[0].clientX - lastMouse.x;
+            const dy = e.touches[0].clientY - lastMouse.y;
+            camera.x += dx;
+            camera.y += dy;
+            lastMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            requestAnimationFrame(render);
+        } else if (e.touches.length === 2) {
+            e.preventDefault(); 
+            const dist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            
+            const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - container.getBoundingClientRect().left;
+            const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - container.getBoundingClientRect().top;
+            
+            const worldX = (centerX - camera.x) / camera.zoom;
+            const worldY = (centerY - camera.y) / camera.zoom;
+
+            camera.zoom *= (dist / pinchStartDist);
+            camera.zoom = Math.max(0.05, Math.min(camera.zoom, 5));
+            pinchStartDist = dist;
+
+            camera.x = centerX - (worldX * camera.zoom);
+            camera.y = centerY - (worldY * camera.zoom);
+            requestAnimationFrame(render);
+        }
+    }, { passive: false });
+    
+    canvas.addEventListener('touchend', () => isDragging = false);
+
+    // --- Raycasting ---
+    function screenToWorld(sx, sy) {
+        return {
+            x: (sx - camera.x) / camera.zoom,
+            y: (sy - camera.y) / camera.zoom
+        };
+    }
+
+    function findHitZone(wx, wy) {
+        for (let z of zones) {
+            if (wx >= z.x && wx <= z.x + z.width && wy >= z.y && wy <= z.y + z.height) {
+                return z;
+            }
+        }
+        return null;
+    }
+
+    function findHitSlot(wx, wy) {
+        if (!activeZone) return null;
+        for (let s of activeZone.slots) {
+            if (wx >= s.x && wx <= s.x + s.width && wy >= s.y && wy <= s.y + s.height) {
+                return s;
+            }
+        }
+        return null;
+    }
+
+    canvas.addEventListener('click', (e) => {
+        const rect = container.getBoundingClientRect();
+        const worldPos = screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
+        
+        if (viewMode === 'facility') {
+            const hit = findHitZone(worldPos.x, worldPos.y);
+            if (hit) {
+                zoomToZone(hit);
+            }
+        } else if (viewMode === 'zone') {
+            const hit = findHitSlot(worldPos.x, worldPos.y);
+            if (hit && (hit.status === 'available' || hit.status === 'reserved')) {
+                selectedSlot = hit;
+                showBottomSheet(hit);
+            } else if (!hit) {
+                hideBottomSheet();
+            }
+        }
+        requestAnimationFrame(render);
+    });
+
+    // --- Navigation Logic ---
+    function zoomToZone(zone) {
+        const rect = container.getBoundingClientRect();
+        
+        // Target bounds with padding
+        const padding = 150; 
+        const targetW = zone.width + padding * 2;
+        const targetH = zone.height + padding * 2;
+        
+        const scaleX = rect.width / targetW;
+        const scaleY = rect.height / targetH;
+        camera.zoom = Math.min(scaleX, scaleY);
+        
+        camera.x = (rect.width - (zone.width * camera.zoom)) / 2 - (zone.x * camera.zoom);
+        camera.y = (rect.height - (zone.height * camera.zoom)) / 2 - (zone.y * camera.zoom);
+        
+        viewMode = 'zone';
+        activeZone = zone;
+        hoveredZone = null;
+        
+        document.getElementById('btn-back-facility').classList.remove('hidden');
+        document.getElementById('btn-filters').classList.add('hidden');
+        document.getElementById('btn-reset-view').classList.add('hidden');
+        
+        requestAnimationFrame(render);
+    }
+
+    function goBackToFacility() {
+        viewMode = 'facility';
+        activeZone = null;
+        selectedSlot = null;
+        hideBottomSheet();
+        
+        document.getElementById('btn-back-facility').classList.add('hidden');
+        document.getElementById('btn-filters').classList.remove('hidden');
+        document.getElementById('btn-reset-view').classList.remove('hidden');
+        
+        resetCamera();
+    }
+
+    // --- Rendering Pipeline ---
+    function render() {
+        const rect = container.getBoundingClientRect();
+        
+        ctx.fillStyle = '#0c0f14';
+        ctx.fillRect(0, 0, rect.width, rect.height);
+
+        ctx.save();
+        ctx.translate(camera.x, camera.y);
+        ctx.scale(camera.zoom, camera.zoom);
+
+        // Optional Base Grid
+        ctx.strokeStyle = 'rgba(255,255,255,0.02)';
+        ctx.lineWidth = 1;
+        
+        if (viewMode === 'facility') {
+            // Render Zone Boundaries
+            for (let z of zones) {
+                ctx.fillStyle = z === hoveredZone ? '#232833' : '#161b22';
+                ctx.strokeStyle = '#374151';
+                ctx.lineWidth = 4;
+                
+                ctx.beginPath();
+                if(ctx.roundRect) {
+                    ctx.roundRect(z.x, z.y, z.width, z.height, 20);
+                } else {
+                    ctx.rect(z.x, z.y, z.width, z.height);
+                }
+                ctx.fill();
+                ctx.stroke();
+                
+                // Zone Title - fixed scale text
+                ctx.fillStyle = 'white';
+                // Adjust font size dynamically so it always fits
+                ctx.font = 'bold 160px sans-serif'; 
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(z.name, z.x + z.width/2, z.y + z.height/2 - 80);
+                
+                ctx.font = 'bold 100px sans-serif';
+                if (z.available_slots === 0) {
+                    ctx.fillStyle = '#ef4444'; // Red
+                    ctx.fillText('Full', z.x + z.width/2, z.y + z.height/2 + 80);
+                } else {
+                    ctx.fillStyle = '#22c55e'; // Green
+                    ctx.fillText(`${z.available_slots} Available`, z.x + z.width/2, z.y + z.height/2 + 80);
+                }
+            }
+        } 
+        else if (viewMode === 'zone' && activeZone) {
+            // Draw active zone background slightly lighter
+            ctx.fillStyle = '#11151a';
+            ctx.beginPath();
+            if(ctx.roundRect) ctx.roundRect(activeZone.x, activeZone.y, activeZone.width, activeZone.height, 20);
+            else ctx.rect(activeZone.x, activeZone.y, activeZone.width, activeZone.height);
+            ctx.fill();
+            
+            // Render Roads
+            for (let r of activeZone.roads || []) {
+                ctx.fillStyle = '#11161d'; // Darker asphalt
+                ctx.fillRect(r.x, r.y, r.width, r.height);
+                
+                // Draw dashed center line if it's a horizontal road
+                if (r.width > r.height) {
+                    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+                    ctx.lineWidth = 3;
+                    ctx.setLineDash([20, 30]);
+                    ctx.beginPath();
+                    ctx.moveTo(r.x, r.y + r.height/2);
+                    ctx.lineTo(r.x + r.width, r.y + r.height/2);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                } else if (r.height > r.width * 2) {
+                    // Vertical road center line
+                    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+                    ctx.lineWidth = 3;
+                    ctx.setLineDash([20, 30]);
+                    ctx.beginPath();
+                    ctx.moveTo(r.x + r.width/2, r.y);
+                    ctx.lineTo(r.x + r.width/2, r.y + r.height);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            }
+
+            // Render Decorations (Arrows and Text)
+            for (let d of activeZone.decorations || []) {
+                if (d.type === 'arrow_right' || d.type === 'arrow_left') {
+                    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+                    ctx.beginPath();
+                    if (d.type === 'arrow_right') {
+                        ctx.moveTo(d.x - 15, d.y - 10);
+                        ctx.lineTo(d.x + 5, d.y - 10);
+                        ctx.lineTo(d.x + 5, d.y - 20);
+                        ctx.lineTo(d.x + 25, d.y);
+                        ctx.lineTo(d.x + 5, d.y + 20);
+                        ctx.lineTo(d.x + 5, d.y + 10);
+                        ctx.lineTo(d.x - 15, d.y + 10);
+                    } else if (d.type === 'arrow_left') {
+                        ctx.moveTo(d.x + 15, d.y - 10);
+                        ctx.lineTo(d.x - 5, d.y - 10);
+                        ctx.lineTo(d.x - 5, d.y - 20);
+                        ctx.lineTo(d.x - 25, d.y);
+                        ctx.lineTo(d.x - 5, d.y + 20);
+                        ctx.lineTo(d.x - 5, d.y + 10);
+                        ctx.lineTo(d.x + 15, d.y + 10);
+                    }
+                    ctx.fill();
+                } else if (d.type === 'text') {
+                    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+                    ctx.font = 'bold 24px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(d.text, d.x, d.y);
+                }
+            }
+            
+            // Render Slots
+            for (let s of activeZone.slots) {
+                // UI Reference Colors
+                let bgColor = '#4b5563'; // disabled/grey
+                let borderColor = '#374151';
+                
+                if (s === selectedSlot) {
+                    bgColor = '#1e3a8a'; // deep blue for selected
+                    borderColor = '#60a5fa'; // neon blue ring
+                    ctx.lineWidth = 4;
+                } else {
+                    ctx.lineWidth = 1;
+                    if (s.status === 'available') {
+                        bgColor = s === hoveredSlot ? '#22c55e' : '#16a34a'; // Green
+                        borderColor = '#14532d';
+                    } else if (s.status === 'occupied') {
+                        bgColor = '#dc2626'; // Red
+                        borderColor = '#7f1d1d';
+                    } else if (s.status === 'reserved') {
+                        bgColor = '#fbbf24'; // Yellow/Orange
+                        borderColor = '#b45309';
+                    } else { // Disabled
+                        bgColor = '#4b5563'; // Grey
+                        borderColor = '#1f2937';
+                    }
+                }
+
+                ctx.fillStyle = bgColor;
+                ctx.strokeStyle = borderColor;
+
+                ctx.beginPath();
+                // Rounded rectangles match the reference image perfectly
+                if(ctx.roundRect) {
+                    ctx.roundRect(s.x, s.y, s.width, s.height, 8); 
+                } else {
+                    ctx.rect(s.x, s.y, s.width, s.height);
+                }
+                ctx.fill();
+                ctx.stroke();
+                
+                // Active/Selected Blue outline effect from reference
+                if (s === selectedSlot) {
+                    ctx.strokeStyle = '#3b82f6'; // outer ring
+                    ctx.beginPath();
+                    if(ctx.roundRect) ctx.roundRect(s.x - 4, s.y - 4, s.width + 8, s.height + 8, 12);
+                    else ctx.rect(s.x - 4, s.y - 4, s.width + 8, s.height + 8);
+                    ctx.stroke();
+                }
+
+                // Draw Label or Icon inside slot
+                if (camera.zoom > 0.5) {
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    
+                    if (s.status === 'disabled') {
+                        // Handicapped Icon (simplified as text symbol or just text)
+                        ctx.fillStyle = 'rgba(255,255,255,0.8)';
+                        ctx.font = 'bold 24px sans-serif';
+                        ctx.fillText('♿', s.x + s.width/2, s.y + s.height/2);
+                    } else if (s.status === 'reserved') {
+                        // Reserved (lock or distinct text)
+                        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+                        ctx.font = 'bold 16px sans-serif';
+                        ctx.fillText('RSV', s.x + s.width/2, s.y + s.height/2);
+                    } else {
+                        // Standard Slot Name
+                        ctx.fillStyle = 'white';
+                        ctx.font = 'bold 16px sans-serif';
+                        ctx.fillText(s.name, s.x + s.width/2, s.y + s.height/2);
+                    }
+                }
+            }
+        }
+
+        ctx.restore();
+    }
+
+    // --- UI Controls ---
+    function showBottomSheet(slot) {
+        document.getElementById('sheet-slot').innerText = slot.name;
+        document.getElementById('selected_slot_input').value = slot.id;
+        document.getElementById('sheet-dist').innerText = activeZone ? activeZone.name : "Distance Info";
+        
+        const featuresEl = document.getElementById('sheet-features');
+        if(slot.type === 'ev') {
+            featuresEl.innerHTML = '<div class="bg-blue-500/10 border border-blue-500/20 text-blue-400 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5"><i class="fas fa-bolt"></i> EV Charging</div>';
+        } else {
+            featuresEl.innerHTML = '<div class="bg-green-500/10 border border-green-500/20 text-green-400 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5"><i class="fas fa-leaf"></i> Standard</div>';
+        }
+
+        document.getElementById('booking-sheet').classList.remove('translate-y-full');
+    }
+
+    function hideBottomSheet() {
+        selectedSlot = null;
+        document.getElementById('booking-sheet').classList.add('translate-y-full');
+    }
+
+    // Initialize
+    setTimeout(resizeCanvas, 50); 
 </script>
 {% endblock %}

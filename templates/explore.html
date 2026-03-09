@@ -15,9 +15,9 @@
         <div class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-gray-400 ml-1">
             <i class="fas fa-search"></i>
         </div>
-        <input type="text" placeholder="Find a parking spot..."
+        <input type="text" id="searchInput" placeholder="Find a parking spot..."
             class="bg-transparent border-none text-white focus:outline-none w-full h-8 sm:h-10 text-xs sm:text-sm placeholder-gray-500"
-            onclick="showRecentSearches()">
+            onkeyup="filterMap()">
         <div class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-accent border-l border-gray-700">
             <i class="fas fa-microphone"></i>
         </div>
@@ -34,7 +34,7 @@
 
 <!-- 3. Preview Card (Fixed Bottom) -->
 <div id="preview-card"
-    class="fixed bottom-4 left-2 right-2 sm:bottom-6 sm:left-4 sm:right-4 z-[100] transform translate-y-[150%] transition-transform duration-300 ease-out max-w-lg sm:max-w-2xl mx-auto">
+    class="fixed bottom-4 inset-x-0 w-[96%] sm:w-full z-[100] transform opacity-0 pointer-events-none translate-y-8 transition-all duration-300 ease-out max-w-lg sm:max-w-2xl mx-auto">
     <div class="bg-surface border border-border rounded-2xl p-6 shadow-2xl flex flex-col gap-5 relative w-full">
         <!-- Close Button -->
         <button onclick="closePreview()"
@@ -100,8 +100,6 @@
 <style>
     /* Custom Marker Badge */
     .price-badge {
-        background-color: var(--accent-color);
-        color: black;
         font-weight: 800;
         font-size: 12px;
         width: 40px !important;
@@ -156,55 +154,103 @@
     }).addTo(map);
 
     var userMarker = null;
+    var allMarkers = [];
 
     // Function to fetch and display parking zones
     function fetchAndDisplayZones(lat, lon) {
+        // Clear old markers if we re-fetch
+        allMarkers.forEach(m => {
+            if (map.hasLayer(m)) map.removeLayer(m);
+        });
+        allMarkers = [];
+
         fetch(`/api/nearby-parking?lat=${lat}&lon=${lon}`)
             .then(response => response.json())
             .then(data => {
                 data.zones.forEach(zone => {
-                    zone.slots.forEach(slot => {
-                        const markerId = `marker-${zone.id}-${slot.id}`;
-                        // Determine color based on slot status
-                        let statusColor = 'bg-green-500';
-                        if (slot.status === 'occupied') statusColor = 'bg-red-500';
-                        else if (slot.status === 'reserved') statusColor = 'bg-yellow-400';
-                        else if (slot.status === 'disabled') statusColor = 'bg-gray-500';
+                    const markerId = `marker-${zone.id}`;
+                    
+                    // Calculate percentage of free slots
+                    const freePercent = zone.total_slots > 0 ? (zone.slots / zone.total_slots) * 100 : 0;
+                    
+                    // Determine color based on slot availability percentage
+                    let statusColor = 'bg-red-600 text-white'; // Default to red (below 25%)
+                    if (freePercent > 75) {
+                        statusColor = 'bg-lime-500 text-black';
+                    } else if (freePercent > 50) {
+                        statusColor = 'bg-green-400 text-black';
+                    } else if (freePercent > 25) {
+                        statusColor = 'bg-orange-500 text-black';
+                    }
 
-                        // Icons for slot features
-                        let featureIcons = '';
-                        if (slot.ev) featureIcons += '<i class="fas fa-bolt text-blue-400 mr-1"></i>';
-                        if (slot.handicapped) featureIcons += '<i class="fas fa-wheelchair text-indigo-300 mr-1"></i>';
-                        if (slot.covered) featureIcons += '<i class="fas fa-umbrella text-cyan-300 mr-1"></i>';
+                    var icon = L.divIcon({
+                        className: 'custom-div-icon',
+                        html: `<div id="${markerId}" class="marker-wrapper">
+                            <div class="price-badge ${statusColor}">
+                                ₹${zone.price}
+                            </div>
+                        </div>`,
+                        iconSize: [50, 50],
+                        iconAnchor: [25, 25]
+                    });
 
-                        var icon = L.divIcon({
-                            className: 'custom-div-icon',
-                            html: `<div id="${markerId}" class="marker-wrapper">
-                                <div class="price-badge ${statusColor}">
-                                    ${slot.zoneLabel} ${slot.label}<br>
-                                    ${featureIcons}
-                                </div>
-                            </div>`,
-                            iconSize: [50, 50],
-                            iconAnchor: [25, 25]
-                        });
+                    var marker = L.marker([zone.lat, zone.lon], { icon: icon }).addTo(map);
+                    marker.zoneData = zone; // Store data on the marker for search filtering
+                    allMarkers.push(marker);
 
-                        var marker = L.marker([slot.lat, slot.lon], { icon: icon }).addTo(map);
+                    // On Click -> Highlight Marker + Open Preview
+                    marker.on('click', () => {
+                        // Deselect others
+                        document.querySelectorAll('.marker-wrapper').forEach(el => el.classList.remove('selected'));
+                        // Select current
+                        const el = document.getElementById(markerId);
+                        if (el) el.classList.add('selected');
 
-                        // On Click -> Highlight Marker + Open Preview
-                        marker.on('click', () => {
-                            // Deselect others
-                            document.querySelectorAll('.marker-wrapper').forEach(el => el.classList.remove('selected'));
-                            // Select current
-                            const el = document.getElementById(markerId);
-                            if (el) el.classList.add('selected');
-
-                            openPreview(slot);
-                            map.flyTo([slot.lat, slot.lon], 17, { paddingBottomRight: [0, 200] });
-                        });
+                        openPreview(zone);
+                        // Convert LatLng to container pixels, offset it upwards to avoid the bottom sheet,
+                        // and convert back to LatLng to set the new center.
+                        let targetPoint = map.project([zone.lat, zone.lon], 17);
+                        // Shift center down by 150px (so the marker goes UP visually)
+                        targetPoint.y -= 150; 
+                        let targetLatLng = map.unproject(targetPoint, 17);
+                        
+                        map.flyTo(targetLatLng, 17);
                     });
                 });
+            })
+            .catch(error => console.error("Error fetching zones:", error));
+    }
+
+    function filterMap() {
+        const query = document.getElementById('searchInput').value.toLowerCase().trim();
+        let visibleMarkers = [];
+        
+        allMarkers.forEach(marker => {
+            const name = (marker.zoneData.name || '').toLowerCase();
+            const loc = (marker.zoneData.location || '').toLowerCase();
+            
+            if (name.includes(query) || loc.includes(query)) {
+                if (!map.hasLayer(marker)) {
+                    marker.addTo(map);
+                }
+                visibleMarkers.push(marker);
+            } else {
+                if (map.hasLayer(marker)) {
+                    map.removeLayer(marker);
+                }
+            }
+        });
+        
+        // Auto-center the map to show the filtered results
+        if (query.length > 0 && visibleMarkers.length > 0) {
+            const group = new L.featureGroup(visibleMarkers);
+            // Push the center up by adding large bottom padding to account for mobile keyboards
+            map.fitBounds(group.getBounds(), { 
+                paddingBottomRight: [0, window.innerHeight * 0.4],
+                paddingTopLeft: [0, 50],
+                maxZoom: 15 
             });
+        }
     }
 
     function openPreview(zone) {
@@ -228,13 +274,14 @@
         }
 
         const card = document.getElementById('preview-card');
-        card.classList.remove('translate-y-[150%]', 'hidden');
-        card.classList.add('translate-y-0');
+        card.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-8', 'translate-y-[150%]', 'hidden');
+        card.classList.add('translate-y-0', 'opacity-100', 'pointer-events-auto');
     }
 
     function closePreview() {
         const card = document.getElementById('preview-card');
-        card.classList.add('translate-y-[150%]');
+        card.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
+        card.classList.add('opacity-0', 'pointer-events-none', 'translate-y-8');
         // Optional: clear selection
         document.querySelectorAll('.marker-wrapper').forEach(el => el.classList.remove('selected'));
     }
@@ -259,11 +306,19 @@
                 
                 // Fetch parking zones for user's actual location
                 fetchAndDisplayZones(lat, lon);
-            });
+            }, err => {
+                console.warn("Geolocation failed or denied:", err);
+                fetchAndDisplayZones(10.0271, 76.3082); // Default to Kochi
+            }, {timeout: 5000});
+        } else {
+            fetchAndDisplayZones(10.0271, 76.3082); // Default to Kochi
         }
     }
 
     // Auto-locate on load
     locateUser();
+    
+    // Fix map initialization bug when loading
+    setTimeout(() => { map.invalidateSize(); }, 500);
 </script>
 {% endblock %}

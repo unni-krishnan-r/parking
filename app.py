@@ -201,10 +201,12 @@ def api_nearby_parking():
         results.append({
             'id': zone.id,
             'name': zone.name,
+            'location': zone.location,
             'lat': zone.lat,
             'lon': zone.lon,
             'price': int(zone.price_per_hour),
             'slots': zone.total_slots - zone.occupied_slots,
+            'total_slots': zone.total_slots,
             'rating': getattr(zone, 'rating', 4.5), # Default if not in model
             'distance': round(dist, 1) if dist else None
         })
@@ -232,13 +234,180 @@ def profile():
 
 # --- Actions ---
 
+import random
+import json
+
+def generate_mock_parking_layout(zone_id, total_slots):
+    """
+    Generates a hierarchical geometric layout for the canvas renderer,
+    simulating a realistic parking lot with roads, aisles, block groups, and arrows.
+    """
+    random.seed(zone_id)
+    zones = []
+    
+    # Target slots per zone - smaller chunks for better visualization
+    target_slots_per_zone = 120 
+    num_zones = max(1, math.ceil(total_slots / target_slots_per_zone))
+    zone_cols = max(1, math.ceil(math.sqrt(num_zones)))
+    
+    slots_allocated = 0
+    zone_margin = 400 # Lots of space between zones
+    
+    for z in range(num_zones):
+        slots_in_this_zone = target_slots_per_zone
+        if z == num_zones - 1:
+            slots_in_this_zone = total_slots - slots_allocated
+            
+        col = z % zone_cols
+        row = z // zone_cols
+        
+        zone_name = chr(65 + (z % 26))
+        if z >= 26:
+            zone_name += str(z // 26)
+            
+        slots = []
+        roads = []
+        decorations = []
+        
+        # INCREASED Dimensions for a realistic looking lot and better clickability
+        slot_width = 50
+        slot_height = 100
+        aisle_width = 200 # Wide driving lane between rows (Slots | Lane | Slots)
+        vertical_road_width = 160 # Main road dividing blocks
+        gap = 6
+        block_size = 10 # Number of cars in a contiguous row before a break
+        
+        # We process aisles. 1 aisle = 2 rows facing it (top & bottom of aisle).
+        slots_per_aisle = block_size * 4 
+        req_aisles = max(1, math.ceil(slots_in_this_zone / slots_per_aisle))
+        
+        # Calculate actual Zone bounds based on geometric layout
+        actual_zw = (block_size * 2 * (slot_width + gap)) + vertical_road_width + 100
+        # Aisle, then Block (Top/Bot), then Aisle, then Block...
+        actual_zh = (req_aisles * (slot_height * 2 + aisle_width)) + aisle_width + 100
+        
+        zx = zone_margin + col * (actual_zw + zone_margin)
+        zy = zone_margin + row * (actual_zh + zone_margin)
+        
+        start_x = zx + 50
+        # Offset down to give room for top entry road
+        start_y = zy + 50 + aisle_width 
+        
+        s_count = 0
+        available_count = 0
+        
+        # Central Vertical Road
+        roads.append({
+            "x": start_x + (block_size * (slot_width + gap)),
+            "y": zy,
+            "width": vertical_road_width,
+            "height": actual_zh
+        })
+        
+        # Entrance Decoration at the top of the vertical road
+        decorations.append({"type": "text", "text": "ENTRANCE", "x": start_x + (block_size * (slot_width + gap)) + vertical_road_width/2, "y": zy + 40})
+        # Exit Decoration at the bottom of the vertical road
+        decorations.append({"type": "text", "text": "EXIT", "x": start_x + (block_size * (slot_width + gap)) + vertical_road_width/2, "y": zy + actual_zh - 40})
+        
+        for r in range(req_aisles):
+            # The horizontal road / aisle
+            lane_y = start_y + r * (slot_height * 2 + aisle_width) - aisle_width
+            
+            roads.append({
+                "x": start_x - 50, # bleed road out left visually
+                "y": lane_y,
+                "width": actual_zw,
+                "height": aisle_width
+            })
+            
+            # Directional Arrows on Aisle
+            # Right-bound arrow in bottom half of aisle
+            decorations.append({"type": "arrow_right", "x": start_x + (block_size * (slot_width+gap)) / 2, "y": lane_y + aisle_width * 0.7})
+            # Left-bound arrow in top half of aisle
+            decorations.append({"type": "arrow_left", "x": start_x + actual_zw - 100 - (block_size * (slot_width+gap)) / 2, "y": lane_y + aisle_width * 0.3})
+            
+            # Slots below this lane (facing up into the lane)
+            y_t = lane_y + aisle_width
+            # Slots above the NEXT lane (facing down into the next lane)
+            # which are immediately below y_t physically back-to-back
+            y_b = y_t + slot_height
+            
+            # Left Block (Top and Bottom Rows)
+            for c in range(block_size):
+                sx = start_x + c * (slot_width + gap)
+                # left-top
+                if s_count < slots_in_this_zone:
+                    status = random.choices(['available', 'occupied', 'disabled', 'reserved'], weights=[60, 30, 5, 5])[0]
+                    if status == 'available': available_count += 1
+                    slots.append({"id": f"Z{z}LRT{r}{c}", "name": f"{zone_name}L{s_count+1}", "x": sx, "y": y_t, "width": slot_width, "height": slot_height, "status": status, "type": 'ev' if random.random() > 0.9 else 'standard'})
+                    s_count += 1
+                # left-bottom (back to back with left-top)
+                if s_count < slots_in_this_zone:
+                    status = random.choices(['available', 'occupied', 'disabled', 'reserved'], weights=[60, 30, 5, 5])[0]
+                    if status == 'available': available_count += 1
+                    slots.append({"id": f"Z{z}LRB{r}{c}", "name": f"{zone_name}L-B{s_count+1}", "x": sx, "y": y_b, "width": slot_width, "height": slot_height, "status": status, "type": 'ev' if random.random() > 0.9 else 'standard'})
+                    s_count += 1
+
+            # Right Block (Top and Bottom Rows)
+            right_start_x = start_x + (block_size * (slot_width + gap)) + vertical_road_width
+            for c in range(block_size):
+                sx = right_start_x + c * (slot_width + gap)
+                # right-top
+                if s_count < slots_in_this_zone:
+                    status = random.choices(['available', 'occupied', 'disabled', 'reserved'], weights=[60, 30, 5, 5])[0]
+                    if status == 'available': available_count += 1
+                    slots.append({"id": f"Z{z}RRT{r}{c}", "name": f"{zone_name}R{s_count+1}", "x": sx, "y": y_t, "width": slot_width, "height": slot_height, "status": status, "type": 'ev' if random.random() > 0.9 else 'standard'})
+                    s_count += 1
+                # right-bottom
+                if s_count < slots_in_this_zone:
+                    status = random.choices(['available', 'occupied', 'disabled', 'reserved'], weights=[60, 30, 5, 5])[0]
+                    if status == 'available': available_count += 1
+                    slots.append({"id": f"Z{z}RRB{r}{c}", "name": f"{zone_name}R-B{s_count+1}", "x": sx, "y": y_b, "width": slot_width, "height": slot_height, "status": status, "type": 'ev' if random.random() > 0.9 else 'standard'})
+                    s_count += 1
+                    
+        # Final bottom lane to enclose the last row
+        final_lane_y = start_y + req_aisles * (slot_height * 2 + aisle_width) - aisle_width
+        roads.append({
+            "x": start_x - 50,
+            "y": final_lane_y,
+            "width": actual_zw,
+            "height": aisle_width
+        })
+        decorations.append({"type": "arrow_right", "x": start_x + (block_size * (slot_width+gap)) / 2, "y": final_lane_y + aisle_width * 0.5})
+
+        zones.append({
+            "id": f"zone_{z}",
+            "name": f"Zone {zone_name}",
+            "x": zx,
+            "y": zy,
+            "width": actual_zw,
+            "height": actual_zh,
+            "available_slots": available_count,
+            "total_slots": slots_in_this_zone,
+            "slots": slots,
+            "roads": roads,
+            "decorations": decorations
+        })
+        
+        slots_allocated += slots_in_this_zone
+
+    max_w = max([z['x'] + z['width'] for z in zones]) if zones else 1000
+    max_h = max([z['y'] + z['height'] for z in zones]) if zones else 1000
+                
+    return {
+        "world": {"width": max_w + zone_margin, "height": max_h + zone_margin},
+        "zones": zones
+    }
+
 @app.route('/book/<int:zone_id>')
 def book_slot(zone_id):
     if 'user_id' not in session:
         return redirect(url_for('login'))
         
     zone = ParkingZone.query.get_or_404(zone_id)
-    return render_template('booking.html', zone=zone)
+    layout_data = generate_mock_parking_layout(zone.id, zone.total_slots)
+    
+    return render_template('booking.html', zone=zone, layout_json=json.dumps(layout_data))
 
 @app.route('/start_session/<int:zone_id>')
 def start_session(zone_id):

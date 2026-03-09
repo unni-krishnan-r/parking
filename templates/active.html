@@ -1,10 +1,10 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="h-full flex flex-col bg-gray-900 text-white">
+<div class="h-full min-h-[calc(100vh-4rem)] flex flex-col max-w-2xl mx-auto bg-gray-900 text-white shadow-2xl relative">
 
     <!-- Header Map Section -->
-    <div class="relative h-2/5 w-full bg-gray-900 border-b border-border">
+    <div class="relative h-64 md:h-80 w-full bg-gray-900 border-b border-border shrink-0">
         <!-- Map Container -->
         <div id="map" class="absolute inset-0 z-0"></div>
 
@@ -16,7 +16,7 @@
     </div>
 
     <!-- Details Section -->
-    <div class="flex-1 px-6 pt-6 pb-24 overflow-y-auto bg-background">
+    <div class="flex-1 px-6 pt-6 pb-24 overflow-y-auto bg-surface/50">
         {% if booking %}
 
         <!-- Status Header -->
@@ -144,6 +144,10 @@
             }).addTo(map);
         });
     }
+
+    // Fix map initialization size
+    setTimeout(() => { map.invalidateSize(); }, 500);
+
     {% endif %}
 </script>
 {% endblock %}
