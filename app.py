@@ -339,13 +339,13 @@ def generate_mock_parking_layout(zone_id, total_slots):
                 if s_count < slots_in_this_zone:
                     status = random.choices(['available', 'occupied', 'disabled', 'reserved'], weights=[60, 30, 5, 5])[0]
                     if status == 'available': available_count += 1
-                    slots.append({"id": f"Z{z}LRT{r}{c}", "name": f"{zone_name}L{s_count+1}", "x": sx, "y": y_t, "width": slot_width, "height": slot_height, "status": status, "type": 'ev' if random.random() > 0.9 else 'standard'})
+                    slots.append({"id": f"Z{z}LRT{r}{c}", "name": f"{s_count+1}", "x": sx, "y": y_t, "width": slot_width, "height": slot_height, "status": status, "type": 'ev' if random.random() > 0.9 else 'standard'})
                     s_count += 1
                 # left-bottom (back to back with left-top)
                 if s_count < slots_in_this_zone:
                     status = random.choices(['available', 'occupied', 'disabled', 'reserved'], weights=[60, 30, 5, 5])[0]
                     if status == 'available': available_count += 1
-                    slots.append({"id": f"Z{z}LRB{r}{c}", "name": f"{zone_name}L-B{s_count+1}", "x": sx, "y": y_b, "width": slot_width, "height": slot_height, "status": status, "type": 'ev' if random.random() > 0.9 else 'standard'})
+                    slots.append({"id": f"Z{z}LRB{r}{c}", "name": f"{s_count+1}", "x": sx, "y": y_b, "width": slot_width, "height": slot_height, "status": status, "type": 'ev' if random.random() > 0.9 else 'standard'})
                     s_count += 1
 
             # Right Block (Top and Bottom Rows)
@@ -356,13 +356,13 @@ def generate_mock_parking_layout(zone_id, total_slots):
                 if s_count < slots_in_this_zone:
                     status = random.choices(['available', 'occupied', 'disabled', 'reserved'], weights=[60, 30, 5, 5])[0]
                     if status == 'available': available_count += 1
-                    slots.append({"id": f"Z{z}RRT{r}{c}", "name": f"{zone_name}R{s_count+1}", "x": sx, "y": y_t, "width": slot_width, "height": slot_height, "status": status, "type": 'ev' if random.random() > 0.9 else 'standard'})
+                    slots.append({"id": f"Z{z}RRT{r}{c}", "name": f"{s_count+1}", "x": sx, "y": y_t, "width": slot_width, "height": slot_height, "status": status, "type": 'ev' if random.random() > 0.9 else 'standard'})
                     s_count += 1
                 # right-bottom
                 if s_count < slots_in_this_zone:
                     status = random.choices(['available', 'occupied', 'disabled', 'reserved'], weights=[60, 30, 5, 5])[0]
                     if status == 'available': available_count += 1
-                    slots.append({"id": f"Z{z}RRB{r}{c}", "name": f"{zone_name}R-B{s_count+1}", "x": sx, "y": y_b, "width": slot_width, "height": slot_height, "status": status, "type": 'ev' if random.random() > 0.9 else 'standard'})
+                    slots.append({"id": f"Z{z}RRB{r}{c}", "name": f"{s_count+1}", "x": sx, "y": y_b, "width": slot_width, "height": slot_height, "status": status, "type": 'ev' if random.random() > 0.9 else 'standard'})
                     s_count += 1
                     
         # Final bottom lane to enclose the last row
@@ -393,10 +393,36 @@ def generate_mock_parking_layout(zone_id, total_slots):
 
     max_w = max([z['x'] + z['width'] for z in zones]) if zones else 1000
     max_h = max([z['y'] + z['height'] for z in zones]) if zones else 1000
+    
+    facility_decorations = [
+        {"type": "text", "text": "MAIN FACILITY ENTRANCE", "x": (max_w + zone_margin) / 2, "y": zone_margin / 2, "fontSize": 120, "color": "#fbbf24"},
+        {"type": "text", "text": "↓ WAY IN ↓", "x": (max_w + zone_margin) / 2, "y": zone_margin / 2 + 100, "fontSize": 60, "color": "rgba(255,255,255,0.5)"}
+    ]
+    
+    facility_roads = []
+    # Main Central Arterial Road driving down the middle
+    if num_zones > 0:
+        facility_roads.append({
+            "x": zone_margin + (max_w - zone_margin) / 2 - 200,
+            "y": 0,
+            "width": 400, # Very wide avenue
+            "height": max_h + zone_margin
+        })
+        # Horizontal connecting roads forming the grid between rows of zones
+        for row in range(math.ceil(num_zones / zone_cols)):
+            zy = zone_margin + row * (actual_zh + zone_margin)
+            facility_roads.append({
+                "x": zone_margin,
+                "y": zy - 200, # Road right above the zone
+                "width": max_w - zone_margin,
+                "height": 200
+            })
                 
     return {
         "world": {"width": max_w + zone_margin, "height": max_h + zone_margin},
-        "zones": zones
+        "zones": zones,
+        "facility_decorations": facility_decorations,
+        "facility_roads": facility_roads
     }
 
 @app.route('/book/<int:zone_id>')
