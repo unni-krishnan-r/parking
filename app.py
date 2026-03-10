@@ -395,8 +395,8 @@ def generate_mock_parking_layout(zone_id, total_slots):
     max_h = max([z['y'] + z['height'] for z in zones]) if zones else 1000
     
     facility_decorations = [
-        {"type": "text", "text": "MAIN FACILITY ENTRANCE", "x": (max_w + zone_margin) / 2, "y": zone_margin / 2, "fontSize": 120, "color": "#fbbf24"},
-        {"type": "text", "text": "↓ WAY IN ↓", "x": (max_w + zone_margin) / 2, "y": zone_margin / 2 + 100, "fontSize": 60, "color": "rgba(255,255,255,0.5)"}
+        {"type": "text", "text": "MAIN FACILITY ENTRANCE", "x": (max_w + zone_margin) / 2, "y": zone_margin / 2 - 150, "fontSize": 120, "color": "#fbbf24"},
+        {"type": "text", "text": "↓ WAY IN ↓", "x": (max_w + zone_margin) / 2, "y": zone_margin / 2 - 50, "fontSize": 60, "color": "rgba(255,255,255,0.5)"}
     ]
     
     facility_roads = []
