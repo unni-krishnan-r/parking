@@ -594,5 +594,37 @@
 
     // Initialize
     setTimeout(resizeCanvas, 50); 
+    
+    // Real-Time Polling Loop (3s Interval)
+    setInterval(() => {
+        fetch(`/api/zone/{{ zone.id }}/layout`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.zones && data.zones.length > 0) {
+                    // Update zones in place without breaking references
+                    zones.splice(0, zones.length, ...data.zones);
+                    
+                    if (activeZone) {
+                        activeZone = zones.find(z => z.id === activeZone.id);
+                        
+                        // Update hovered and selected slot references
+                        if (selectedSlot) {
+                            selectedSlot = activeZone.slots.find(s => s.id === selectedSlot.id);
+                            // If slot was taken by someone else and changed to occupied, hide bottom sheet
+                            if (selectedSlot && selectedSlot.status === 'occupied') {
+                                hideBottomSheet();
+                            }
+                        }
+                        if (hoveredSlot) {
+                            hoveredSlot = activeZone.slots.find(s => s.id === hoveredSlot.id);
+                        }
+                    }
+                    
+                    // Trigger a re-draw frame
+                    requestAnimationFrame(render);
+                }
+            })
+            .catch(e => console.error("Polling error:", e));
+    }, 3000);
 </script>
 {% endblock %}

@@ -57,10 +57,15 @@
                     window.location.href = `/dashboard?lat=${lat}&lon=${lon}`;
                 },
                 (error) => {
-                    console.error(error);
-                    alert("Unable to retrieve your location. Make sure you allow location access.");
+                    console.error("Geolocation Error:", error);
+                    let reason = "Make sure you allow location access.";
+                    if(error.code === 1) reason = "Permission denied.";
+                    else if(error.code === 2) reason = "Position unavailable. Please check your GPS/Network.";
+                    else if(error.code === 3) reason = "Timeout. Took too long to find location.";
+                    alert("Unable to retrieve your location: " + reason);
                     btn.innerHTML = originalText;
-                }
+                },
+                {timeout: 15000, enableHighAccuracy: true, maximumAge: 60000}
             );
         }
     </script>

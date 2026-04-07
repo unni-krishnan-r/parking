@@ -308,9 +308,16 @@
                 fetchAndDisplayZones(lat, lon);
             }, err => {
                 console.warn("Geolocation failed or denied:", err);
+                let reason = "Unknown error";
+                if(err.code === 1) reason = "Permission denied";
+                else if(err.code === 2) reason = "Position unavailable (Check GPS/Network)";
+                else if(err.code === 3) reason = "Timeout (Took too long to find location)";
+                
+                alert("Could not detect your exact location: " + reason + ". \nShowing default area.");
                 fetchAndDisplayZones(10.0271, 76.3082); // Default to Kochi
-            }, {timeout: 5000});
+            }, {timeout: 15000, enableHighAccuracy: true, maximumAge: 60000});
         } else {
+            alert("Your browser does not support Geolocation or it is blocked by HTTP.");
             fetchAndDisplayZones(10.0271, 76.3082); // Default to Kochi
         }
     }

@@ -91,7 +91,7 @@
 <script>
     // --- Timer Logic ---
     {% if booking %}
-    const startTime = new Date("{{ booking.start_time.isoformat() }}").getTime();
+    const startTime = new Date("{{ booking.start_time.isoformat() }}Z").getTime();
     setInterval(() => {
         const now = new Date().getTime();
         const diff = now - startTime;
@@ -142,7 +142,9 @@
                 fitSelectedRoutes: true,
                 show: false
             }).addTo(map);
-        });
+        }, err => {
+            console.warn("Geolocation for routing failed:", err);
+        }, {timeout: 15000, enableHighAccuracy: true, maximumAge: 60000});
     }
 
     // Fix map initialization size

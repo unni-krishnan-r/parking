@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from models import db, User, ParkingZone, Booking
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -391,6 +391,16 @@ def generate_mock_parking_layout(zone_id, total_slots):
         
         slots_allocated += slots_in_this_zone
 
+    active_bookings = Booking.query.filter_by(zone_id=zone_id, status='Active').all()
+    booked_slot_ids = {b.slot_id for b in active_bookings if b.slot_id}
+    
+    for z in zones:
+        for s in z['slots']:
+            if s['id'] in booked_slot_ids:
+                if s['status'] == 'available':
+                    z['available_slots'] -= 1
+                s['status'] = 'occupied'
+
     max_w = max([z['x'] + z['width'] for z in zones]) if zones else 1000
     max_h = max([z['y'] + z['height'] for z in zones]) if zones else 1000
     
@@ -435,9 +445,16 @@ def book_slot(zone_id):
     
     return render_template('booking.html', zone=zone, layout_json=json.dumps(layout_data))
 
+@app.route('/api/zone/<int:zone_id>/layout')
+def api_zone_layout(zone_id):
+    zone = ParkingZone.query.get_or_404(zone_id)
+    layout_data = generate_mock_parking_layout(zone.id, zone.total_slots)
+    return jsonify(layout_data)
+
 @app.route('/start_session/<int:zone_id>')
 def start_session(zone_id):
     user_id = get_current_user_id()
+    slot_id = request.args.get('slot')
     
     existing = Booking.query.filter_by(user_id=user_id, status='Active').first()
     if existing:
@@ -448,8 +465,15 @@ def start_session(zone_id):
     if zone.occupied_slots >= zone.total_slots:
         flash("Zone is full!", "error")
         return redirect(url_for('dashboard'))
+        
+    if slot_id:
+        # Prevent concurrent overlapping bookings for the exact same slot
+        already_booked = Booking.query.filter_by(zone_id=zone_id, slot_id=slot_id, status='Active').first()
+        if already_booked:
+            flash("Sorry, that exact slot was just taken by someone else! Please pick another.", "error")
+            return redirect(url_for('book_slot', zone_id=zone_id))
 
-    new_booking = Booking(user_id=user_id, zone_id=zone_id)
+    new_booking = Booking(user_id=user_id, zone_id=zone_id, slot_id=slot_id)
     zone.occupied_slots += 1
     
     db.session.add(new_booking)
