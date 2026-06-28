@@ -21,7 +21,6 @@ if os.getenv("DATABASE_URL"):
     app.config['SQLALCHEMY_DATABASE_URI'] = uri
 else:
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///parkeasy.db'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///parkeasy.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'parkeasy_secret_key'
 
