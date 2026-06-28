@@ -11,6 +11,7 @@ firebase_api_key = os.getenv("FIREBASE_API_KEY")
 print(firebase_api_key) # Just to test locally that it prints out correctly!
 
 app = Flask(__name__)
+handler=app
 
 # Check if DATABASE_URL exists in our environment variables (.env)
 if os.getenv("DATABASE_URL"):
