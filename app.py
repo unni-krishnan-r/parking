@@ -4,8 +4,23 @@ from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 import math
+import os
+from dotenv import load_dotenv
+load_dotenv()
+firebase_api_key = os.getenv("FIREBASE_API_KEY")
+print(firebase_api_key) # Just to test locally that it prints out correctly!
 
 app = Flask(__name__)
+
+# Check if DATABASE_URL exists in our environment variables (.env)
+if os.getenv("DATABASE_URL"):
+    uri = os.getenv("DATABASE_URL")
+    # Vercel needs postgres:// instead of postgresql:// to work properly
+    if uri.startswith("postgresql://"):
+        uri = uri.replace("postgresql://", "postgres://", 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = uri
+else:
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///parkeasy.db'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///parkeasy.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'parkeasy_secret_key'
